@@ -381,18 +381,31 @@ export default class HomeComponent implements OnInit {
     const comentario = this.comentariosPorReporte[reporteId];
     if (!comentario?.trim() || !this.userId) return;
 
+    // Añadir logs para depuración
+    console.log('Enviando comentario:', {
+      reporteId,
+      comentario,
+      userId: this.userId,
+      padreId: this.comentarioRespuestaId
+    });
+
     this.interaccionesService.crearComentario(
       reporteId, 
       comentario, 
-      Number(this.userId),
-      this.comentarioRespuestaId ?? undefined
+      parseInt(this.userId), // Asegurar que sea número
+      this.comentarioRespuestaId || undefined
     ).subscribe({
-      next: () => {
-        this.comentariosPorReporte[reporteId] = ''; // Reset input
+      next: (response) => {
+        console.log('Comentario creado:', response);
+        this.comentariosPorReporte[reporteId] = ''; 
         this.comentarioRespuestaId = null;
         this.cargarComentariosParaReporte(reporteId);
       },
-      error: (error) => console.error('Error al crear comentario:', error)
+      error: (error) => {
+        console.error('Error detallado al crear comentario:', error);
+        // Mostrar el error al usuario
+        this.errorMessage = 'Error al crear el comentario. Por favor, intenta de nuevo.';
+      }
     });
   }
 

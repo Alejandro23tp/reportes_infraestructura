@@ -25,12 +25,16 @@ export class InteraccionesService {
   }
 
   crearComentario(reporteId: number, contenido: string, usuarioId: number, padreId?: number): Observable<any> {
-    return this.http.post(`${this.apiUrl}comentarios`, {
+    const payload = {
       reporte_id: reporteId,
       contenido,
       usuario_id: usuarioId,
-      padre_id: padreId
-    });
+      padre_id: padreId || null // Asegurar que sea null si no hay valor
+    };
+
+    console.log('Payload comentario:', payload);
+    
+    return this.http.post(`${this.apiUrl}comentarios`, payload);
   }
 
   getComentarios(reporteId: number): Observable<ComentariosResponse> {
