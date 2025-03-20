@@ -336,12 +336,58 @@ export default class HomeComponent implements OnInit {
       return;
     }
 
-    this.interaccionesService.toggleReaccion(reporteId, tipoReaccion, Number(this.userId)).subscribe({
-      next: () => {
-        this.cargarReaccionesParaReporte(reporteId);
-      },
-      error: (error) => console.error('Error al actualizar reacción:', error)
-    });
+    const usuarioId = Number(this.userId);
+    const reaccionActual = this.reaccionesPorReporte[reporteId]?.find(
+      r => r.tipo === tipoReaccion && r.usuarios.some(u => u.id === usuarioId)
+    );
+
+    // Copia de las reacciones actuales
+    let reacciones = [...(this.reaccionesPorReporte[reporteId] || [])];
+
+    // Si ya existe esta reacción del usuario, solo la quitamos
+    if (reaccionActual) {
+      reaccionActual.usuarios = reaccionActual.usuarios.filter(u => u.id !== usuarioId);
+      reaccionActual.count = Math.max(0, reaccionActual.count - 1);
+      reacciones = reacciones.filter(r => r.count > 0);
+    } else {
+      // Eliminar cualquier otra reacción del usuario
+      reacciones = reacciones.map(r => {
+        if (r.usuarios.some(u => u.id === usuarioId)) {
+          return {
+            ...r,
+            usuarios: r.usuarios.filter(u => u.id !== usuarioId),
+            count: r.count - 1
+          };
+        }
+        return r;
+      }).filter(r => r.count > 0);
+
+      // Agregar la nueva reacción
+      const reaccionExistente = reacciones.find(r => r.tipo === tipoReaccion);
+      if (reaccionExistente) {
+        reaccionExistente.usuarios.push({ id: usuarioId, nombre: this.userName });
+        reaccionExistente.count++;
+      } else {
+        reacciones.push({
+          tipo: tipoReaccion,
+          count: 1,
+          usuarios: [{ id: usuarioId, nombre: this.userName }]
+        });
+      }
+    }
+
+    // Actualizar el estado inmediatamente
+    this.reaccionesPorReporte[reporteId] = reacciones;
+
+    // Llamada al servidor sin esperar respuesta para UI más fluida
+    this.interaccionesService.toggleReaccion(reporteId, tipoReaccion, usuarioId)
+      .subscribe({
+        error: (error) => {
+          console.error('Error al actualizar reacción:', error);
+          // Solo recargar en caso de error
+          this.cargarReaccionesParaReporte(reporteId);
+        }
+      });
   }
 
   getReaccionesPorTipo(reporteId: number, tipoReaccion: number): number {
