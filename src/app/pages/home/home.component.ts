@@ -36,6 +36,14 @@ export default class HomeComponent implements OnInit {
   comentariosLista: { [key: number]: Comentario[] } = {}; // Para la lista de comentarios
   reaccionesPorReporte: { [key: number]: Reaccion[] } = {};
   comentarioRespuestaId: number | null = null;
+  comentariosCounts: { [key: number]: any } = {};
+  comentariosPrincipales: { [key: number]: any[] } = {};
+  comentariosRespuestas: { [key: number]: any[] } = {};
+  mostrarComentarios: { [key: number]: boolean } = {};
+  mostrarRespuestas: { [key: number]: boolean } = {};
+  comentarioEnEdicion: { [key: number]: string } = {};
+  comentarioPadreId: number | null = null;
+  comentarioRespuestaTexto: string = '';
 
   private srvReports = inject(ReportesService);
   private srvCategorias = inject(CategoriasService);
@@ -54,8 +62,8 @@ export default class HomeComponent implements OnInit {
     // Cargar reacciones y comentarios para cada reporte
     this.listReports.forEach(reporte => {
       this.cargarReaccionesParaReporte(reporte.id);
-      this.cargarComentariosParaReporte(reporte.id);
     });
+    this.cargarContadoresComentarios();
   }
 
   async getReports() {
@@ -360,67 +368,118 @@ export default class HomeComponent implements OnInit {
     );
   }
 
-  cargarComentariosParaReporte(reporteId: number) {
-    this.interaccionesService.getComentarios(reporteId).subscribe({
-      next: (response) => {
-        // Ensure usuario property exists and has nombre
-        const comentariosProcessed = response.data.map(comentario => ({
-          ...comentario,
-          usuario: comentario.usuario ? {
-            ...comentario.usuario,
-            nombre: comentario.usuario.nombre || 'Usuario'
-          } : { id: 0, nombre: 'Usuario' }
-        }));
-        this.comentariosLista[reporteId] = comentariosProcessed;
-      },
-      error: (error) => console.error('Error al cargar comentarios:', error)
-    });
-  }
-
   enviarComentario(reporteId: number) {
-    const comentario = this.comentariosPorReporte[reporteId];
-    if (!comentario?.trim() || !this.userId) return;
-
-    // Añadir logs para depuración
-    console.log('Enviando comentario:', {
-      reporteId,
-      comentario,
-      userId: this.userId,
-      padreId: this.comentarioRespuestaId
-    });
+    const contenido = this.comentarioRespuestaTexto || this.comentariosPorReporte[reporteId];
+    if (!contenido?.trim() || !this.userId) return;
 
     this.interaccionesService.crearComentario(
-      reporteId, 
-      comentario, 
-      parseInt(this.userId), // Asegurar que sea número
-      this.comentarioRespuestaId || undefined
+      reporteId,
+      contenido,
+      parseInt(this.userId),
+      this.comentarioPadreId || undefined
     ).subscribe({
-      next: (response) => {
-        console.log('Comentario creado:', response);
-        this.comentariosPorReporte[reporteId] = ''; 
-        this.comentarioRespuestaId = null;
-        this.cargarComentariosParaReporte(reporteId);
+      next: () => {
+        // Limpiar estados
+        this.comentariosPorReporte[reporteId] = '';
+        this.comentarioRespuestaTexto = '';
+        const padreId = this.comentarioPadreId;
+        this.comentarioPadreId = null;
+
+        // Actualizar vistas
+        this.cargarContadoresComentarios();
+        if (this.mostrarComentarios[reporteId]) {
+          this.cargarComentariosPrincipales(reporteId);
+          // Si estábamos respondiendo a un comentario, recargar sus respuestas
+          if (padreId && this.mostrarRespuestas[padreId]) {
+            this.cargarRespuestas(padreId);
+          }
+        }
       },
       error: (error) => {
-        console.error('Error detallado al crear comentario:', error);
-        // Mostrar el error al usuario
+        console.error('Error al crear comentario:', error);
         this.errorMessage = 'Error al crear el comentario. Por favor, intenta de nuevo.';
       }
     });
   }
 
   responderComentario(reporteId: number, comentarioId: number) {
-    this.comentarioRespuestaId = comentarioId;
-    const input = document.querySelector(`#comentario-${reporteId}`);
-    if (input) (input as HTMLElement).focus();
+    this.comentarioPadreId = comentarioId;
+    this.comentarioRespuestaTexto = '';
+  }
+
+  cancelarRespuesta() {
+    this.comentarioPadreId = null;
+    this.comentarioRespuestaTexto = '';
   }
 
   eliminarComentario(reporteId: number, comentarioId: number) {
     this.interaccionesService.eliminarComentario(comentarioId).subscribe({
       next: () => {
-        this.cargarComentariosParaReporte(reporteId);
+        // Actualizar contadores y comentarios principales
+        this.cargarContadoresComentarios();
+        if (this.mostrarComentarios[reporteId]) {
+          this.cargarComentariosPrincipales(reporteId);
+        }
       },
       error: (error) => console.error('Error al eliminar comentario:', error)
     });
+  }
+
+  cargarContadoresComentarios() {
+    this.listReports.forEach(reporte => {
+      this.interaccionesService.getComentariosCount(reporte.id)
+        .subscribe(response => {
+          this.comentariosCounts[reporte.id] = response.data;
+        });
+    });
+  }
+
+  toggleComentarios(reporteId: number) {
+    this.mostrarComentarios[reporteId] = !this.mostrarComentarios[reporteId];
+    if (this.mostrarComentarios[reporteId]) {
+      this.cargarComentariosPrincipales(reporteId);
+    }
+  }
+
+  cargarComentariosPrincipales(reporteId: number) {
+    this.interaccionesService.getComentariosPrincipales(reporteId)
+      .subscribe(response => {
+        this.comentariosPrincipales[reporteId] = response.data;
+      });
+  }
+
+  toggleRespuestas(reporteId: number, comentarioId: number) {
+    this.mostrarRespuestas[comentarioId] = !this.mostrarRespuestas[comentarioId];
+    if (this.mostrarRespuestas[comentarioId]) {
+      this.cargarRespuestas(comentarioId);
+    }
+  }
+
+  cargarRespuestas(comentarioId: number) {
+    // Añadir console.log para depuración
+    console.log('Cargando respuestas para comentario:', comentarioId);
+    
+    this.interaccionesService.getRespuestasComentario(comentarioId).subscribe({
+      next: (response) => {
+        console.log('Respuestas recibidas:', response);
+        this.comentariosRespuestas[comentarioId] = response.data;
+      },
+      error: (error) => {
+        console.error('Error al cargar respuestas:', error);
+      }
+    });
+  }
+
+  // Agregar este método helper
+  getComentarioTexto(reporteId: number): string {
+    return this.comentarioPadreId ? this.comentarioRespuestaTexto : (this.comentariosPorReporte[reporteId] || '');
+  }
+
+  setComentarioTexto(reporteId: number, valor: string) {
+    if (this.comentarioPadreId) {
+      this.comentarioRespuestaTexto = valor;
+    } else {
+      this.comentariosPorReporte[reporteId] = valor;
+    }
   }
 }

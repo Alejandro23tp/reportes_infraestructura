@@ -24,6 +24,19 @@ export class InteraccionesService {
     return this.http.get<ReaccionesResponse>(`${this.apiUrl}reacciones/${reporteId}`);
   }
 
+  // Endpoints actualizados de comentarios
+  getComentariosCount(reporteId: number): Observable<any> {
+    return this.http.get(`${this.apiUrl}comentarios/count/${reporteId}`);
+  }
+
+  getComentariosPrincipales(reporteId: number): Observable<any> {
+    return this.http.get(`${this.apiUrl}comentarios/principales/${reporteId}`);
+  }
+
+  getRespuestasComentario(comentarioId: number): Observable<any> {
+    return this.http.get(`${this.apiUrl}comentarios/respuestas/${comentarioId}`);
+  }
+
   crearComentario(reporteId: number, contenido: string, usuarioId: number, padreId?: number): Observable<any> {
     const payload = {
       reporte_id: reporteId,
@@ -35,10 +48,6 @@ export class InteraccionesService {
     console.log('Payload comentario:', payload);
     
     return this.http.post(`${this.apiUrl}comentarios`, payload);
-  }
-
-  getComentarios(reporteId: number): Observable<ComentariosResponse> {
-    return this.http.get<ComentariosResponse>(`${this.apiUrl}comentarios/${reporteId}`);
   }
 
   eliminarComentario(comentarioId: number): Observable<any> {

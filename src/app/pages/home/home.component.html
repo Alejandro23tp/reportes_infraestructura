@@ -268,69 +268,85 @@
 
               <!-- Comentarios -->
               <div class="mt-4">
-                <div class="flex gap-2 mb-4">
-                  <input type="text" 
-                         [(ngModel)]="comentariosPorReporte[reporte.id]" 
-                         placeholder="Escribe un comentario..."
-                         class="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
-                                dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500"
-                         (keyup.enter)="enviarComentario(reporte.id)">
-                  <button 
-                    (click)="enviarComentario(reporte.id)"
-                    class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 
-                           transition-colors duration-200">
-                    Enviar
-                  </button>
-                </div>
+                <!-- Botón para mostrar/ocultar comentarios con contador -->
+                <button (click)="toggleComentarios(reporte.id)" 
+                        class="text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white">
+                  💬 {{ comentariosCounts[reporte.id]?.total || 0 }} comentarios
+                </button>
 
-                <!-- Lista de comentarios -->
-                <div class="space-y-4">
-                  <div *ngFor="let comentario of comentariosLista[reporte.id] || []" 
-                       class="rounded-lg">
-                    <!-- Main comment -->
-                    <div class="p-3 bg-gray-50 dark:bg-gray-700/50 mb-2">
-                      <div class="flex justify-between items-start">
-                        <div>
-                          <div class="font-medium text-gray-900 dark:text-white">
-                            {{ (comentario.usuario && comentario.usuario.nombre) || 'Usuario' }}
-                          </div>
-                          <p class="text-gray-600 dark:text-gray-300">{{comentario.contenido}}</p>
-                          <small class="text-gray-500 dark:text-gray-400">
-                            {{comentario.created_at | date}}
-                          </small>
+                <!-- Lista de comentarios principales -->
+                <div *ngIf="mostrarComentarios[reporte.id]" class="space-y-4 mt-4">
+                  <!-- Input para comentar - Este es el que mantenemos -->
+                  <div class="flex flex-col gap-2">
+                    <div *ngIf="comentarioPadreId" class="flex items-center justify-between text-sm bg-blue-50 dark:bg-blue-900/30 p-2 rounded">
+                      <span class="text-blue-600 dark:text-blue-300">Respondiendo a un comentario</span>
+                      <button 
+                        (click)="cancelarRespuesta()"
+                        class="text-red-500 hover:text-red-600">
+                        Cancelar
+                      </button>
+                    </div>
+
+                    <div class="flex gap-2">
+                      <input type="text" 
+                             [ngModel]="getComentarioTexto(reporte.id)"
+                             (ngModelChange)="setComentarioTexto(reporte.id, $event)"
+                             [placeholder]="comentarioPadreId ? 'Escribe una respuesta...' : 'Escribe un comentario...'"
+                             class="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
+                                    dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500"
+                             (keyup.enter)="enviarComentario(reporte.id)">
+                      <button 
+                        (click)="enviarComentario(reporte.id)"
+                        class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 
+                               transition-colors duration-200">
+                        {{ comentarioPadreId ? 'Responder' : 'Comentar' }}
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Lista de comentarios -->
+                  <div *ngFor="let comentario of comentariosPrincipales[reporte.id]" 
+                       class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+                    <!-- ...rest of existing comment template... -->
+
+                    <div class="flex justify-between items-start">
+                      <div>
+                        <div class="font-medium text-gray-900 dark:text-white">
+                          {{ comentario.usuario.nombre }}
                         </div>
-                        <div class="flex items-center space-x-2">
+                        <p class="text-gray-600 dark:text-gray-300">{{ comentario.contenido }}</p>
+                        <div class="flex items-center gap-4 mt-2">
+                          <small class="text-gray-500">{{ comentario.created_at | date }}</small>
                           <button 
-                            (click)="responderComentario(reporte.id, comentario.id!)"
+                            (click)="responderComentario(reporte.id, comentario.id)"
                             class="text-sm text-blue-500 hover:text-blue-600">
                             Responder
                           </button>
-                          <button *ngIf="comentario.usuario_id?.toString() === userId"
-                                  (click)="eliminarComentario(reporte.id, comentario.id!)"
-                                  class="text-red-500 hover:text-red-600">
-                            ×
+                          <button *ngIf="comentario.contador_respuestas > 0"
+                                  (click)="toggleRespuestas(reporte.id, comentario.id)"
+                                  class="text-sm text-blue-500 hover:text-blue-600">
+                            {{ mostrarRespuestas[comentario.id] ? 'Ocultar' : 'Ver' }} 
+                            {{ comentario.contador_respuestas }} respuestas
                           </button>
                         </div>
                       </div>
                     </div>
-                    
-                    <!-- Nested replies -->
-                    <div class="ml-8 space-y-2">
-                      <div *ngFor="let respuesta of comentario.respuestas" 
-                           class="p-3 bg-gray-50/50 dark:bg-gray-700/30 rounded-lg">
+
+                    <!-- Lista de respuestas -->
+                    <div *ngIf="mostrarRespuestas[comentario.id]" class="ml-8 mt-3 space-y-3">
+                      <div *ngFor="let respuesta of comentariosRespuestas[comentario.id]"
+                           class="bg-gray-50/50 dark:bg-gray-700/30 rounded-lg p-3">
                         <div class="flex justify-between items-start">
-                          <div>
+                          <div class="w-full">
                             <div class="font-medium text-gray-900 dark:text-white">
-                              {{ (respuesta.usuario && respuesta.usuario.nombre) || 'Usuario' }}
+                              {{ respuesta.usuario?.nombre || 'Usuario' }}
                             </div>
-                            <p class="text-gray-600 dark:text-gray-300">{{respuesta.contenido}}</p>
-                            <small class="text-gray-500 dark:text-gray-400">
-                              {{respuesta.created_at | date}}
-                            </small>
+                            <p class="text-gray-600 dark:text-gray-300">{{ respuesta.contenido }}</p>
+                            <small class="text-gray-500">{{ respuesta.created_at | date }}</small>
                           </div>
                           <button *ngIf="respuesta.usuario_id?.toString() === userId"
-                                  (click)="eliminarComentario(reporte.id, respuesta.id!)"
-                                  class="text-red-500 hover:text-red-600">
+                                  (click)="eliminarComentario(reporte.id, respuesta.id)"
+                                  class="text-red-500 hover:text-red-600 ml-2">
                             ×
                           </button>
                         </div>
