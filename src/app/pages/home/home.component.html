@@ -8,7 +8,7 @@
           <div class="flex items-center space-x-4 mb-6">
             <div class="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-500"></div>
             <div>
-              <h3 class="font-bold text-gray-900 dark:text-white">Bienvenido</h3>
+              <h3 class="font-bold text-gray-900 dark:text-white">Bienvenido, {{ userName }}</h3>
               <p class="text-sm text-gray-500 dark:text-gray-400">Reportes Comunitarios</p>
             </div>
           </div>
@@ -25,15 +25,21 @@
               <span>⭐</span>
               <span>Destacados</span>
             </a>
+            <button 
+              (click)="onLogout()" 
+              class="flex items-center space-x-3 px-4 py-3 w-full rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 dark:text-red-300">
+              <span>🚪</span>
+              <span>Cerrar Sesión</span>
+            </button>
           </nav>
         </div>
       </div>
 
       <!-- Feed principal -->
       <div class="lg:col-span-6">
-        <!-- Formulario de creación -->
+        <!-- Botón para abrir modal -->
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
-          <div class="flex items-center space-x-4 mb-6">
+          <div class="flex items-center space-x-4">
             <div class="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700"></div>
             <button 
               (click)="toggleFormulario()" 
@@ -41,74 +47,136 @@
               ¿Qué quieres reportar hoy?
             </button>
           </div>
+        </div>
 
-          <!-- Formulario expandible -->
-          <form *ngIf="mostrarFormulario" (ngSubmit)="crearReporte()" #reporteForm="ngForm" class="space-y-6">
-            <div *ngIf="errorMessage" class="bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 p-4">
-              <p class="text-red-700 dark:text-red-400">{{ errorMessage }}</p>
-            </div>
+        <!-- Modal del formulario -->
+        <div *ngIf="mostrarFormulario" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+          <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <!-- Overlay de fondo -->
+            <div class="fixed inset-0 bg-gray-800 bg-opacity-75 transition-opacity" (click)="toggleFormulario()"></div>
 
-            <div class="space-y-4">
-              <select 
-                [(ngModel)]="nuevoReporte.categoria_id" 
-                name="categoria_id" 
-                class="w-full rounded-lg border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500"
-                required>
-                <option value="" disabled selected>Selecciona una categoría</option>
-                <option *ngFor="let categoria of categorias" [value]="categoria.id">{{ categoria.nombre }}</option>
-              </select>
+            <!-- Modal -->
+            <div class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full mx-4 sm:mx-auto">
+              <div class="px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <!-- Encabezado del modal -->
+                <div class="flex justify-between items-center mb-4">
+                  <h3 class="text-lg font-medium text-gray-900 dark:text-white">Crear nuevo reporte</h3>
+                  <button 
+                    type="button" 
+                    class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+                    (click)="toggleFormulario()">
+                    ✕
+                  </button>
+                </div>
 
-              <div class="flex gap-2">
-                <input 
-                  type="text" 
-                  [(ngModel)]="nuevoReporte.ubicacion" 
-                  name="ubicacion" 
-                  class="flex-1 rounded-lg border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white" 
-                  readonly 
-                  placeholder="Ubicación"
-                  required>
-                <button 
-                  type="button" 
-                  (click)="getGeolocalizacion()" 
-                  class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-all">
-                  📍
-                </button>
+                <!-- Formulario -->
+                <form (ngSubmit)="crearReporte()" #reporteForm="ngForm" class="space-y-6">
+                  <div *ngIf="errorMessage" class="bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 p-4">
+                    <p class="text-red-700 dark:text-red-400">{{ errorMessage }}</p>
+                  </div>
+
+                  <div class="space-y-4">
+                    <!-- Mantener el mismo contenido del formulario original -->
+                    <select 
+                      [(ngModel)]="nuevoReporte.categoria_id" 
+                      name="categoria_id" 
+                      class="w-full rounded-lg border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500">
+                      <option value="" disabled>Selecciona una categoría (opcional)</option>
+                      <option *ngFor="let categoria of categorias" 
+                              [value]="categoria.id"
+                              [selected]="categoria.nombre.toLowerCase() === categoriaSugerida?.toLowerCase()">
+                        {{ categoria.nombre }}
+                        <span *ngIf="categoria.nombre.toLowerCase() === categoriaSugerida?.toLowerCase()" 
+                              class="text-green-500 dark:text-green-400">
+                          (Sugerida)
+                        </span>
+                      </option>
+                    </select>
+                    <!-- Estado del análisis de imagen -->
+                    <div *ngIf="analizandoImagen" 
+                         class="text-sm text-blue-600 dark:text-blue-400 mt-1">
+                      Analizando imagen...
+                    </div>
+                    <!-- Mensaje de categoría sugerida -->
+                    <div *ngIf="categoriaSugerida" 
+                         class="text-sm text-green-600 dark:text-green-400 mt-1">
+                      Categoría sugerida basada en el análisis de la imagen: {{ categoriaSugerida }}
+                    </div>
+
+                    <div class="flex flex-col gap-2">
+                      <div class="flex gap-2">
+                        <input 
+                          type="text" 
+                          [value]="nuevoReporte.ubicacion ? 'Ubicación capturada ✓' : 'Ubicación no capturada'"
+                          class="flex-1 rounded-lg border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white" 
+                          readonly 
+                          [ngClass]="{'bg-green-50 dark:bg-green-900/30': geoLocationSuccess}">
+                        <button 
+                          type="button" 
+                          (click)="getGeolocalizacion()" 
+                          class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-all">
+                          📍
+                        </button>
+                      </div>
+                      <div *ngIf="geoLocationMessage" 
+                           [ngClass]="{
+                             'text-green-600 dark:text-green-400': geoLocationSuccess,
+                             'text-red-600 dark:text-red-400': !geoLocationSuccess
+                           }" 
+                           class="text-sm">
+                        {{ geoLocationMessage }}
+                      </div>
+                    </div>
+
+                    <textarea 
+                      [(ngModel)]="nuevoReporte.descripcion" 
+                      name="descripcion" 
+                      class="w-full rounded-lg border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white" 
+                      rows="3" 
+                      placeholder="Describe el problema..."
+                      required>
+                    </textarea>
+
+                    <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 hover:border-blue-500 transition-colors">
+                      <input 
+                        type="file" 
+                        (change)="onImageChange($event)" 
+                        class="hidden" 
+                        id="imagen"
+                        accept="image/*"
+                        required>
+                      <label for="imagen" class="flex flex-col items-center justify-center cursor-pointer">
+                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span class="mt-2 text-sm text-gray-500 dark:text-gray-400">Añadir imagen</span>
+                      </label>
+                    </div>
+
+                    <div *ngIf="imagenPreview" class="mt-4">
+                      <img [src]="imagenPreview" alt="Vista previa" class="max-h-48 rounded-lg mx-auto">
+                    </div>
+                  </div>
+
+                  <!-- Botones del modal -->
+                  <div class="flex justify-end gap-3">
+                    <button 
+                      type="button"
+                      (click)="toggleFormulario()"
+                      class="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-all">
+                      Cancelar
+                    </button>
+                    <button 
+                      type="submit" 
+                      [disabled]="!reporteForm.valid || submitting || analizandoImagen || !categoriaSugerida" 
+                      class="px-6 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white font-medium rounded-lg transition-all">
+                      {{ submitting ? 'Enviando...' : (analizandoImagen ? 'Analizando...' : 'Publicar') }}
+                    </button>
+                  </div>
+                </form>
               </div>
-
-              <textarea 
-                [(ngModel)]="nuevoReporte.descripcion" 
-                name="descripcion" 
-                class="w-full rounded-lg border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white" 
-                rows="3" 
-                placeholder="Describe el problema..."
-                required>
-              </textarea>
-
-              <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 hover:border-blue-500 transition-colors">
-                <input 
-                  type="file" 
-                  (change)="onImageChange($event)" 
-                  class="hidden" 
-                  id="imagen"
-                  required>
-                <label for="imagen" class="flex flex-col items-center justify-center cursor-pointer">
-                  <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <span class="mt-2 text-sm text-gray-500 dark:text-gray-400">Añadir imagen</span>
-                </label>
-              </div>
             </div>
-
-            <div class="flex justify-end">
-              <button 
-                type="submit" 
-                [disabled]="!reporteForm.valid" 
-                class="px-6 py-2.5 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white font-medium rounded-lg transition-all">
-                Publicar
-              </button>
-            </div>
-          </form>
+          </div>
         </div>
 
         <!-- Lista de reportes -->
@@ -139,6 +207,9 @@
                 </span>
                 <span class="px-3 py-1 text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300 rounded-full">
                   {{ reporte.urgencia }}
+                </span>
+                <span class="px-3 py-1 text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300 rounded-full">
+                  {{ reporte.categoria?.nombre || 'Sin categoría' }}
                 </span>
                 <span class="px-3 py-1 text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 rounded-full">
                   📍 {{ reporte.ubicacion.lat }}, {{ reporte.ubicacion.lon }}

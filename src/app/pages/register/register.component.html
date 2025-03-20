@@ -1,0 +1,109 @@
+<div class="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md w-full space-y-8">
+    <div>
+      <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+        Registro de Usuario
+      </h2>
+    </div>
+    <form class="mt-8 space-y-6" (ngSubmit)="onSubmit()" #registerForm="ngForm">
+      <!-- Campo Nombre -->
+      <div class="space-y-4">
+        <div>
+          <input
+            [(ngModel)]="userData.nombre"
+            name="nombre"
+            type="text"
+            required
+            [class.border-red-500]="validationErrors['nombre']"
+            class="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 focus:z-10 sm:text-sm"
+            placeholder="Nombre completo">
+          <p *ngIf="validationErrors['nombre']" class="mt-1 text-sm text-red-500">
+            {{ validationErrors['nombre'] }}
+          </p>
+        </div>
+
+        <!-- Campo Email -->
+        <div>
+          <input
+            [(ngModel)]="userData.email"
+            name="email"
+            type="email"
+            required
+            [class.border-red-500]="validationErrors['email']"
+            class="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 focus:z-10 sm:text-sm"
+            placeholder="Correo electrónico">
+          <p *ngIf="validationErrors['email']" class="mt-1 text-sm text-red-500">
+            {{ validationErrors['email'] }}
+          </p>
+        </div>
+
+        <!-- Campo Contraseña -->
+        <div>
+          <input
+            [(ngModel)]="userData.password"
+            name="password"
+            type="password"
+            required
+            [class.border-red-500]="validationErrors['password']"
+            class="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 focus:z-10 sm:text-sm"
+            placeholder="Contraseña">
+          <p *ngIf="validationErrors['password']" class="mt-1 text-sm text-red-500">
+            {{ validationErrors['password'] }}
+          </p>
+        </div>
+
+        <!-- Campo Cédula -->
+        <div>
+          <input
+            [(ngModel)]="userData.cedula"
+            name="cedula"
+            type="text"
+            required
+            [class.border-red-500]="validationErrors['cedula']"
+            class="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 focus:z-10 sm:text-sm"
+            placeholder="Cédula">
+          <p *ngIf="validationErrors['cedula']" class="mt-1 text-sm text-red-500">
+            {{ validationErrors['cedula'] }}
+          </p>
+        </div>
+
+        <!-- Campo Dirección -->
+        <div>
+          <input
+            [(ngModel)]="userData.direccion"
+            name="direccion"
+            type="text"
+            required
+            [class.border-red-500]="validationErrors['direccion']"
+            class="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 focus:z-10 sm:text-sm"
+            placeholder="Dirección">
+          <p *ngIf="validationErrors['direccion']" class="mt-1 text-sm text-red-500">
+            {{ validationErrors['direccion'] }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Error general -->
+      <div *ngIf="error" class="text-red-500 text-sm text-center">
+        {{ error }}
+      </div>
+
+      <!-- Botón de registro -->
+      <div>
+        <button
+          type="submit"
+          [disabled]="!registerForm.valid || loading"
+          class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400">
+          {{ loading ? 'Registrando...' : 'Registrarse' }}
+        </button>
+      </div>
+
+      <!-- Link a login -->
+      <div class="text-center">
+        <a routerLink="/login" class="text-sm text-blue-600 hover:text-blue-500">
+          ¿Ya tienes una cuenta? Inicia sesión
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
