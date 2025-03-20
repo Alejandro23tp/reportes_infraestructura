@@ -19,6 +19,11 @@ export const routes: Routes = [
     component: RegisterComponent
   },
   {
+    path: 'mapa',
+    loadComponent: () => import('./pages/mapa/mapa.component').then(m => m.MapaComponent),
+    canActivate: [AuthGuard]
+  },
+  {
     path: '**',
     redirectTo: ''
   }

@@ -58,6 +58,10 @@ export class ReportesService {
       );
   }
 
+  getUbicaciones() {
+    return this.http.get(`${this.environment}reportes/ubicaciones/all`);
+  }
+
   analizarImagen(imagen: File): Observable<any> {
     const formData = new FormData();
     formData.append('imagen', imagen);
