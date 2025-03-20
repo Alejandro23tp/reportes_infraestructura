@@ -10,6 +10,7 @@ import { LoginComponent } from './pages/login/login.component';
 import { authInterceptor } from './interceptors/auth.interceptor';
 import { AppRoutingModule } from './app-routing.module';
 import HomeComponent from './pages/home/home.component';
+import { InteraccionesService } from './services/interacciones.service';
 
 @NgModule({
   declarations: [
@@ -25,7 +26,8 @@ import HomeComponent from './pages/home/home.component';
 
   ],
   providers: [
-    { provide: HTTP_INTERCEPTORS, useValue: authInterceptor, multi: true }
+    { provide: HTTP_INTERCEPTORS, useValue: authInterceptor, multi: true },
+    InteraccionesService
   ],
   // Removed bootstrap array as AppComponent is a standalone component
 })

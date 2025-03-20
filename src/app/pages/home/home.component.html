@@ -189,7 +189,7 @@
                 <div class="flex items-center space-x-3">
                   <div class="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500"></div>
                   <div>
-                    <h3 class="font-semibold text-gray-900 dark:text-white">{{ reporte.usuario.nombre }}</h3>
+                    <h3 class="font-semibold text-gray-900 dark:text-white">{{ reporte.usuario.name }}</h3>
                     <p class="text-sm text-gray-500 dark:text-gray-400">{{ reporte.created_at | date:'medium' }}</p>
                   </div>
                 </div>
@@ -225,20 +225,119 @@
 
             <!-- Acciones del reporte -->
             <div class="p-6 border-t border-gray-100 dark:border-gray-700">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-4">
-                  <button class="flex items-center space-x-2 text-gray-500 hover:text-red-500 transition-colors">
-                    <span>❤️</span>
-                    <span class="text-sm">24</span>
+              <!-- Reacciones -->
+              <div class="flex items-center gap-2 mb-4">
+                <!-- Botones fijos de reacción -->
+                <div class="flex items-center gap-2">
+                  <button 
+                    (click)="toggleReaccion(reporte.id, 1)"
+                    [class.bg-blue-100]="haReaccionado(reporte.id, 1)"
+                    class="px-3 py-1 text-sm rounded-full flex items-center space-x-1 border">
+                    <span>👍</span>
+                    <span>{{ getReaccionesPorTipo(reporte.id, 1) }}</span>
                   </button>
-                  <button class="flex items-center space-x-2 text-gray-500 hover:text-blue-500 transition-colors">
-                    <span>💬</span>
-                    <span class="text-sm">3</span>
+                  <button 
+                    (click)="toggleReaccion(reporte.id, 2)"
+                    [class.bg-blue-100]="haReaccionado(reporte.id, 2)"
+                    class="px-3 py-1 text-sm rounded-full flex items-center space-x-1 border">
+                    <span>❤️</span>
+                    <span>{{ getReaccionesPorTipo(reporte.id, 2) }}</span>
+                  </button>
+                  <button 
+                    (click)="toggleReaccion(reporte.id, 3)"
+                    [class.bg-blue-100]="haReaccionado(reporte.id, 3)"
+                    class="px-3 py-1 text-sm rounded-full flex items-center space-x-1 border">
+                    <span>😠</span>
+                    <span>{{ getReaccionesPorTipo(reporte.id, 3) }}</span>
                   </button>
                 </div>
-                <button class="text-gray-500 hover:text-blue-500 transition-colors">
-                  🔗
-                </button>
+
+                <!-- Lista de usuarios que reaccionaron -->
+                <div *ngFor="let reaccion of reaccionesPorReporte[reporte.id]" 
+                     class="flex items-center space-x-2">
+                  <div class="relative group" *ngIf="(reaccion.usuarios || []).length > 0">
+                    <div class="text-xs text-gray-500">
+                      {{ (reaccion.usuarios && reaccion.usuarios[0] && reaccion.usuarios[0].nombre) || 'Usuario' }}
+                      <span *ngIf="(reaccion.usuarios || []).length > 1">
+                        y {{ reaccion.usuarios.length - 1 }} más
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Comentarios -->
+              <div class="mt-4">
+                <div class="flex gap-2 mb-4">
+                  <input type="text" 
+                         [(ngModel)]="comentariosPorReporte[reporte.id]" 
+                         placeholder="Escribe un comentario..."
+                         class="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
+                                dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500"
+                         (keyup.enter)="enviarComentario(reporte.id)">
+                  <button 
+                    (click)="enviarComentario(reporte.id)"
+                    class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 
+                           transition-colors duration-200">
+                    Enviar
+                  </button>
+                </div>
+
+                <!-- Lista de comentarios -->
+                <div class="space-y-4">
+                  <div *ngFor="let comentario of comentariosLista[reporte.id] || []" 
+                       class="rounded-lg">
+                    <!-- Main comment -->
+                    <div class="p-3 bg-gray-50 dark:bg-gray-700/50 mb-2">
+                      <div class="flex justify-between items-start">
+                        <div>
+                          <div class="font-medium text-gray-900 dark:text-white">
+                            {{ (comentario.usuario && comentario.usuario.nombre) || 'Usuario' }}
+                          </div>
+                          <p class="text-gray-600 dark:text-gray-300">{{comentario.contenido}}</p>
+                          <small class="text-gray-500 dark:text-gray-400">
+                            {{comentario.created_at | date}}
+                          </small>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                          <button 
+                            (click)="responderComentario(reporte.id, comentario.id!)"
+                            class="text-sm text-blue-500 hover:text-blue-600">
+                            Responder
+                          </button>
+                          <button *ngIf="comentario.usuario_id?.toString() === userId"
+                                  (click)="eliminarComentario(reporte.id, comentario.id!)"
+                                  class="text-red-500 hover:text-red-600">
+                            ×
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <!-- Nested replies -->
+                    <div class="ml-8 space-y-2">
+                      <div *ngFor="let respuesta of comentario.respuestas" 
+                           class="p-3 bg-gray-50/50 dark:bg-gray-700/30 rounded-lg">
+                        <div class="flex justify-between items-start">
+                          <div>
+                            <div class="font-medium text-gray-900 dark:text-white">
+                              {{ (respuesta.usuario && respuesta.usuario.nombre) || 'Usuario' }}
+                            </div>
+                            <p class="text-gray-600 dark:text-gray-300">{{respuesta.contenido}}</p>
+                            <small class="text-gray-500 dark:text-gray-400">
+                              {{respuesta.created_at | date}}
+                            </small>
+                          </div>
+                          <button *ngIf="respuesta.usuario_id?.toString() === userId"
+                                  (click)="eliminarComentario(reporte.id, respuesta.id!)"
+                                  class="text-red-500 hover:text-red-600">
+                            ×
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

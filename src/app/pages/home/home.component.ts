@@ -1,3 +1,4 @@
+import { Reaccion } from './../../interfaces/interacciones.interface';
 import { Component, inject, OnInit } from '@angular/core';
 import { ReportesService } from '../../services/reportes.service';
 import { firstValueFrom } from 'rxjs';
@@ -7,6 +8,8 @@ import { CategoriasService } from '../../services/categorias.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../services/auth.service';
 import { environment } from '../../../environments/environment.development';
+import { InteraccionesService } from '../../services/interacciones.service';
+import { Comentario } from '../../interfaces/interacciones.interface';
 
 @Component({
   selector: 'app-home',
@@ -29,10 +32,15 @@ export default class HomeComponent implements OnInit {
   userId: string = '';
   categoriaSugerida: any = null;
   analizandoImagen: boolean = false; // Nueva propiedad para controlar el estado del análisis
+  comentariosPorReporte: { [key: number]: string } = {}; // Para el input de comentarios
+  comentariosLista: { [key: number]: Comentario[] } = {}; // Para la lista de comentarios
+  reaccionesPorReporte: { [key: number]: Reaccion[] } = {};
+  comentarioRespuestaId: number | null = null;
 
   private srvReports = inject(ReportesService);
   private srvCategorias = inject(CategoriasService);
   private authService = inject(AuthService);
+  private interaccionesService = inject(InteraccionesService);
 
   async ngOnInit() {
     await this.getReports();
@@ -42,6 +50,11 @@ export default class HomeComponent implements OnInit {
         this.userName = user.nombre || '';
         this.userId = user.sub || ''; // El ID del usuario viene en el claim 'sub' del JWT
       }
+    });
+    // Cargar reacciones y comentarios para cada reporte
+    this.listReports.forEach(reporte => {
+      this.cargarReaccionesParaReporte(reporte.id);
+      this.cargarComentariosParaReporte(reporte.id);
     });
   }
 
@@ -285,5 +298,116 @@ export default class HomeComponent implements OnInit {
 
   onLogout() {
     this.authService.logout();
+  }
+
+  // Helper method to convert the reactions object to an array
+  getReaccionesArray(reporteId: number): Reaccion[] {
+    return this.reaccionesPorReporte[reporteId] || [];
+  }
+
+  cargarReaccionesParaReporte(reporteId: number) {
+    this.interaccionesService.getReacciones(reporteId).subscribe({
+      next: (response) => {
+        // Ensure usuarios array exists and has the correct structure
+        const reaccionesProcessed = response.data.map(reaccion => ({
+          ...reaccion,
+          usuarios: reaccion.usuarios?.map(usuario => ({
+            ...usuario,
+            nombre: usuario.nombre || 'Usuario'
+          })) || []
+        }));
+        this.reaccionesPorReporte[reporteId] = reaccionesProcessed;
+      },
+      error: (error) => console.error('Error al cargar reacciones:', error)
+    });
+  }
+
+  toggleReaccion(reporteId: number, tipoReaccion: number) {
+    if (!this.userId) {
+      console.error('Usuario no autenticado');
+      return;
+    }
+
+    this.interaccionesService.toggleReaccion(reporteId, tipoReaccion, Number(this.userId)).subscribe({
+      next: () => {
+        this.cargarReaccionesParaReporte(reporteId);
+      },
+      error: (error) => console.error('Error al actualizar reacción:', error)
+    });
+  }
+
+  getReaccionesPorTipo(reporteId: number, tipoReaccion: number): number {
+    const reaccion = this.reaccionesPorReporte[reporteId]?.find(r => r.tipo === tipoReaccion);
+    return reaccion?.count || 0;
+  }
+
+  getReaccionEmoji(tipo: number): string {
+    switch(tipo) {
+      case 1: return '👍';
+      case 2: return '❤️';
+      case 3: return '😠';
+      case 4: return '😮';
+      case 5: return '😂';
+      default: return '👍';
+    }
+  }
+
+  haReaccionado(reporteId: number, tipo: number): boolean {
+    const reacciones = this.reaccionesPorReporte[reporteId] || [];
+    return reacciones.some(r => 
+      r.tipo === tipo && 
+      r.usuarios.some(u => u.id === Number(this.userId))
+    );
+  }
+
+  cargarComentariosParaReporte(reporteId: number) {
+    this.interaccionesService.getComentarios(reporteId).subscribe({
+      next: (response) => {
+        // Ensure usuario property exists and has nombre
+        const comentariosProcessed = response.data.map(comentario => ({
+          ...comentario,
+          usuario: comentario.usuario ? {
+            ...comentario.usuario,
+            nombre: comentario.usuario.nombre || 'Usuario'
+          } : { id: 0, nombre: 'Usuario' }
+        }));
+        this.comentariosLista[reporteId] = comentariosProcessed;
+      },
+      error: (error) => console.error('Error al cargar comentarios:', error)
+    });
+  }
+
+  enviarComentario(reporteId: number) {
+    const comentario = this.comentariosPorReporte[reporteId];
+    if (!comentario?.trim() || !this.userId) return;
+
+    this.interaccionesService.crearComentario(
+      reporteId, 
+      comentario, 
+      Number(this.userId),
+      this.comentarioRespuestaId ?? undefined
+    ).subscribe({
+      next: () => {
+        this.comentariosPorReporte[reporteId] = ''; // Reset input
+        this.comentarioRespuestaId = null;
+        this.cargarComentariosParaReporte(reporteId);
+      },
+      error: (error) => console.error('Error al crear comentario:', error)
+    });
+  }
+
+  responderComentario(reporteId: number, comentarioId: number) {
+    this.comentarioRespuestaId = comentarioId;
+    const input = document.querySelector(`#comentario-${reporteId}`);
+    if (input) (input as HTMLElement).focus();
+  }
+
+  eliminarComentario(reporteId: number, comentarioId: number) {
+    this.interaccionesService.eliminarComentario(comentarioId).subscribe({
+      next: () => {
+        this.cargarComentariosParaReporte(reporteId);
+      },
+      error: (error) => console.error('Error al eliminar comentario:', error)
+    });
   }
 }
