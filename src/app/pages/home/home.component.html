@@ -217,143 +217,167 @@
               </div>
             </div>
 
-            <!-- Imagen del reporte -->
-            <img 
-              [src]="reporte.imagen_url" 
-              alt="Imagen del reporte" 
-              class="w-full h-auto">
+            <!-- Modificar solo la sección de imagen del reporte -->
+            <div class="relative">
+              <ng-container *ngIf="!isImageLoading(reporte.id); else loadingImage">
+                <img 
+                  [src]="reporte.imagen_url" 
+                  alt="Imagen del reporte" 
+                  class="w-full h-auto"
+                  loading="lazy"
+                  (load)="imagesLoading.set(reporte.id, false)"
+                  (error)="imagesLoading.set(reporte.id, false)">
+              </ng-container>
+              <ng-template #loadingImage>
+                <app-skeleton-loader height="300px"></app-skeleton-loader>
+              </ng-template>
+            </div>
 
             <!-- Acciones del reporte -->
             <div class="p-6 border-t border-gray-100 dark:border-gray-700">
               <!-- Reacciones -->
-              <div class="flex items-center gap-2 mb-4">
-                <!-- Botones fijos de reacción -->
-                <div class="flex items-center gap-2">
-                  <button 
-                    (click)="toggleReaccion(reporte.id, 1)"
-                    [class.bg-blue-100]="haReaccionado(reporte.id, 1)"
-                    class="px-3 py-1 text-sm rounded-full flex items-center space-x-1 border">
-                    <span>👍</span>
-                    <span>{{ getReaccionesPorTipo(reporte.id, 1) }}</span>
-                  </button>
-                  <button 
-                    (click)="toggleReaccion(reporte.id, 2)"
-                    [class.bg-blue-100]="haReaccionado(reporte.id, 2)"
-                    class="px-3 py-1 text-sm rounded-full flex items-center space-x-1 border">
-                    <span>❤️</span>
-                    <span>{{ getReaccionesPorTipo(reporte.id, 2) }}</span>
-                  </button>
-                  <button 
-                    (click)="toggleReaccion(reporte.id, 3)"
-                    [class.bg-blue-100]="haReaccionado(reporte.id, 3)"
-                    class="px-3 py-1 text-sm rounded-full flex items-center space-x-1 border">
-                    <span>😠</span>
-                    <span>{{ getReaccionesPorTipo(reporte.id, 3) }}</span>
-                  </button>
-                </div>
+              <div class="reacciones-container">
+                <ng-container *ngIf="!reaccionesLoading[reporte.id]; else loadingReacciones">
+                  <div class="flex items-center gap-2 mb-4">
+                    <!-- Botones fijos de reacción -->
+                    <div class="flex items-center gap-2">
+                      <button 
+                        (click)="toggleReaccion(reporte.id, 1)"
+                        [class.bg-blue-100]="haReaccionado(reporte.id, 1)"
+                        class="px-3 py-1 text-sm rounded-full flex items-center space-x-1 border">
+                        <span>👍</span>
+                        <span>{{ getReaccionesPorTipo(reporte.id, 1) }}</span>
+                      </button>
+                      <button 
+                        (click)="toggleReaccion(reporte.id, 2)"
+                        [class.bg-blue-100]="haReaccionado(reporte.id, 2)"
+                        class="px-3 py-1 text-sm rounded-full flex items-center space-x-1 border">
+                        <span>❤️</span>
+                        <span>{{ getReaccionesPorTipo(reporte.id, 2) }}</span>
+                      </button>
+                      <button 
+                        (click)="toggleReaccion(reporte.id, 3)"
+                        [class.bg-blue-100]="haReaccionado(reporte.id, 3)"
+                        class="px-3 py-1 text-sm rounded-full flex items-center space-x-1 border">
+                        <span>😠</span>
+                        <span>{{ getReaccionesPorTipo(reporte.id, 3) }}</span>
+                      </button>
+                    </div>
 
-                <!-- Lista de usuarios que reaccionaron -->
-                <div *ngFor="let reaccion of reaccionesPorReporte[reporte.id]" 
-                     class="flex items-center space-x-2">
-                  <div class="relative group" *ngIf="(reaccion.usuarios || []).length > 0">
-                    <div class="text-xs text-gray-500">
-                      {{ (reaccion.usuarios && reaccion.usuarios[0] && reaccion.usuarios[0].nombre) || 'Usuario' }}
-                      <span *ngIf="(reaccion.usuarios || []).length > 1">
-                        y {{ reaccion.usuarios.length - 1 }} más
-                      </span>
+                    <!-- Lista de usuarios que reaccionaron -->
+                    <div *ngFor="let reaccion of reaccionesPorReporte[reporte.id]" 
+                         class="flex items-center space-x-2">
+                      <div class="relative group" *ngIf="(reaccion.usuarios || []).length > 0">
+                        <div class="text-xs text-gray-500">
+                          {{ (reaccion.usuarios && reaccion.usuarios[0] && reaccion.usuarios[0].nombre) || 'Usuario' }}
+                          <span *ngIf="(reaccion.usuarios || []).length > 1">
+                            y {{ reaccion.usuarios.length - 1 }} más
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </ng-container>
+                <ng-template #loadingReacciones>
+                  <app-skeleton-loader height="24px" width="120px"></app-skeleton-loader>
+                </ng-template>
               </div>
 
               <!-- Comentarios -->
-              <div class="mt-4">
-                <!-- Botón para mostrar/ocultar comentarios con contador -->
-                <button (click)="toggleComentarios(reporte.id)" 
-                        class="text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white">
-                  💬 {{ comentariosCounts[reporte.id]?.total || 0 }} comentarios
-                </button>
+              <div class="comentarios-container">
+                <ng-container *ngIf="!comentariosLoading[reporte.id]; else loadingComentarios">
+                  <div class="mt-4">
+                    <!-- Botón para mostrar/ocultar comentarios con contador -->
+                    <button (click)="toggleComentarios(reporte.id)" 
+                            class="text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white">
+                      💬 {{ comentariosCounts[reporte.id]?.total || 0 }} comentarios
+                    </button>
 
-                <!-- Lista de comentarios principales -->
-                <div *ngIf="mostrarComentarios[reporte.id]" class="space-y-4 mt-4">
-                  <!-- Input para comentar - Este es el que mantenemos -->
-                  <div class="flex flex-col gap-2">
-                    <div *ngIf="comentarioPadreId" class="flex items-center justify-between text-sm bg-blue-50 dark:bg-blue-900/30 p-2 rounded">
-                      <span class="text-blue-600 dark:text-blue-300">Respondiendo a un comentario</span>
-                      <button 
-                        (click)="cancelarRespuesta()"
-                        class="text-red-500 hover:text-red-600">
-                        Cancelar
-                      </button>
-                    </div>
-
-                    <div class="flex gap-2">
-                      <input type="text" 
-                             [ngModel]="getComentarioTexto(reporte.id)"
-                             (ngModelChange)="setComentarioTexto(reporte.id, $event)"
-                             [placeholder]="comentarioPadreId ? 'Escribe una respuesta...' : 'Escribe un comentario...'"
-                             class="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
-                                    dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500"
-                             (keyup.enter)="enviarComentario(reporte.id)">
-                      <button 
-                        (click)="enviarComentario(reporte.id)"
-                        class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 
-                               transition-colors duration-200">
-                        {{ comentarioPadreId ? 'Responder' : 'Comentar' }}
-                      </button>
-                    </div>
-                  </div>
-
-                  <!-- Lista de comentarios -->
-                  <div *ngFor="let comentario of comentariosPrincipales[reporte.id]" 
-                       class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
-                    <!-- ...rest of existing comment template... -->
-
-                    <div class="flex justify-between items-start">
-                      <div>
-                        <div class="font-medium text-gray-900 dark:text-white">
-                          {{ comentario.usuario.nombre }}
-                        </div>
-                        <p class="text-gray-600 dark:text-gray-300">{{ comentario.contenido }}</p>
-                        <div class="flex items-center gap-4 mt-2">
-                          <small class="text-gray-500">{{ comentario.created_at | date }}</small>
+                    <!-- Lista de comentarios principales -->
+                    <div *ngIf="mostrarComentarios[reporte.id]" class="space-y-4 mt-4">
+                      <!-- Input para comentar - Este es el que mantenemos -->
+                      <div class="flex flex-col gap-2">
+                        <div *ngIf="comentarioPadreId" class="flex items-center justify-between text-sm bg-blue-50 dark:bg-blue-900/30 p-2 rounded">
+                          <span class="text-blue-600 dark:text-blue-300">Respondiendo a un comentario</span>
                           <button 
-                            (click)="responderComentario(reporte.id, comentario.id)"
-                            class="text-sm text-blue-500 hover:text-blue-600">
-                            Responder
+                            (click)="cancelarRespuesta()"
+                            class="text-red-500 hover:text-red-600">
+                            Cancelar
                           </button>
-                          <button *ngIf="comentario.contador_respuestas > 0"
-                                  (click)="toggleRespuestas(reporte.id, comentario.id)"
-                                  class="text-sm text-blue-500 hover:text-blue-600">
-                            {{ mostrarRespuestas[comentario.id] ? 'Ocultar' : 'Ver' }} 
-                            {{ comentario.contador_respuestas }} respuestas
+                        </div>
+
+                        <div class="flex gap-2">
+                          <input type="text" 
+                                 [ngModel]="getComentarioTexto(reporte.id)"
+                                 (ngModelChange)="setComentarioTexto(reporte.id, $event)"
+                                 [placeholder]="comentarioPadreId ? 'Escribe una respuesta...' : 'Escribe un comentario...'"
+                                 class="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
+                                        dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500"
+                                 (keyup.enter)="enviarComentario(reporte.id)">
+                          <button 
+                            (click)="enviarComentario(reporte.id)"
+                            class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 
+                                   transition-colors duration-200">
+                            {{ comentarioPadreId ? 'Responder' : 'Comentar' }}
                           </button>
                         </div>
                       </div>
-                    </div>
 
-                    <!-- Lista de respuestas -->
-                    <div *ngIf="mostrarRespuestas[comentario.id]" class="ml-8 mt-3 space-y-3">
-                      <div *ngFor="let respuesta of comentariosRespuestas[comentario.id]"
-                           class="bg-gray-50/50 dark:bg-gray-700/30 rounded-lg p-3">
+                      <!-- Lista de comentarios -->
+                      <div *ngFor="let comentario of comentariosPrincipales[reporte.id]" 
+                           class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+                        <!-- ...rest of existing comment template... -->
+
                         <div class="flex justify-between items-start">
-                          <div class="w-full">
+                          <div>
                             <div class="font-medium text-gray-900 dark:text-white">
-                              {{ respuesta.usuario?.nombre || 'Usuario' }}
+                              {{ comentario.usuario.nombre }}
                             </div>
-                            <p class="text-gray-600 dark:text-gray-300">{{ respuesta.contenido }}</p>
-                            <small class="text-gray-500">{{ respuesta.created_at | date }}</small>
+                            <p class="text-gray-600 dark:text-gray-300">{{ comentario.contenido }}</p>
+                            <div class="flex items-center gap-4 mt-2">
+                              <small class="text-gray-500">{{ comentario.created_at | date }}</small>
+                              <button 
+                                (click)="responderComentario(reporte.id, comentario.id)"
+                                class="text-sm text-blue-500 hover:text-blue-600">
+                                Responder
+                              </button>
+                              <button *ngIf="comentario.contador_respuestas > 0"
+                                      (click)="toggleRespuestas(reporte.id, comentario.id)"
+                                      class="text-sm text-blue-500 hover:text-blue-600">
+                                {{ mostrarRespuestas[comentario.id] ? 'Ocultar' : 'Ver' }} 
+                                {{ comentario.contador_respuestas }} respuestas
+                              </button>
+                            </div>
                           </div>
-                          <button *ngIf="respuesta.usuario_id?.toString() === userId"
-                                  (click)="eliminarComentario(reporte.id, respuesta.id)"
-                                  class="text-red-500 hover:text-red-600 ml-2">
-                            ×
-                          </button>
+                        </div>
+
+                        <!-- Lista de respuestas -->
+                        <div *ngIf="mostrarRespuestas[comentario.id]" class="ml-8 mt-3 space-y-3">
+                          <div *ngFor="let respuesta of comentariosRespuestas[comentario.id]"
+                               class="bg-gray-50/50 dark:bg-gray-700/30 rounded-lg p-3">
+                            <div class="flex justify-between items-start">
+                              <div class="w-full">
+                                <div class="font-medium text-gray-900 dark:text-white">
+                                  {{ respuesta.usuario?.nombre || 'Usuario' }}
+                                </div>
+                                <p class="text-gray-600 dark:text-gray-300">{{ respuesta.contenido }}</p>
+                                <small class="text-gray-500">{{ respuesta.created_at | date }}</small>
+                              </div>
+                              <button *ngIf="respuesta.usuario_id?.toString() === userId"
+                                      (click)="eliminarComentario(reporte.id, respuesta.id)"
+                                      class="text-red-500 hover:text-red-600 ml-2">
+                                ×
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                </ng-container>
+                <ng-template #loadingComentarios>
+                  <app-skeleton-loader height="80px"></app-skeleton-loader>
+                </ng-template>
               </div>
             </div>
           </div>

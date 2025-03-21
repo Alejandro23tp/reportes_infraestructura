@@ -10,11 +10,12 @@ import { AuthService } from '../../services/auth.service';
 import { environment } from '../../../environments/environment.development';
 import { InteraccionesService } from '../../services/interacciones.service';
 import { Comentario } from '../../interfaces/interacciones.interface';
+import { SkeletonLoaderComponent } from '../../components/skeleton-loader/skeleton-loader.component';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SkeletonLoaderComponent],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
 })
@@ -44,26 +45,182 @@ export default class HomeComponent implements OnInit {
   comentarioEnEdicion: { [key: number]: string } = {};
   comentarioPadreId: number | null = null;
   comentarioRespuestaTexto: string = '';
-
+  loading = true;
+  reaccionesLoading: { [key: number]: boolean } = {};
+  comentariosLoading: { [key: number]: boolean } = {};
   private srvReports = inject(ReportesService);
   private srvCategorias = inject(CategoriasService);
   private authService = inject(AuthService);
   private interaccionesService = inject(InteraccionesService);
+  private pageSize = 5;
+  private currentPage = 0;
+  private isLoading = false;
+  private allReportsLoaded = false;
+  private loadedReportIds = new Set<number>();
+  imagesLoading = new Map<number, boolean>();
+  private currentImageIndex = 0;
+  private batchSize = 5;
 
   async ngOnInit() {
-    await this.getReports();
+    await this.getInitialReports();
     await this.getCategorias();
     this.authService.getUser().subscribe(user => {
       if (user) {
         this.userName = user.nombre || '';
         this.userId = user.sub || ''; // El ID del usuario viene en el claim 'sub' del JWT
+        // Solo cargamos los datos iniciales una vez
+        this.cargarDatosInicialesPrioritarios();
       }
     });
-    // Cargar reacciones y comentarios para cada reporte
-    this.listReports.forEach(reporte => {
-      this.cargarReaccionesParaReporte(reporte.id);
+    this.setupInfiniteScroll();
+  }
+
+  private async cargarDatosInicialesPrioritarios() {
+    // Tomar las primeras 3 publicaciones
+    const publicacionesPrioritarias = this.listReports.slice(0, 3);
+    
+    // Cargar sus datos de forma prioritaria
+    for (const reporte of publicacionesPrioritarias) {
+      if (!this.loadedReportIds.has(reporte.id)) {
+        await this.cargarDatosReporteAsync(reporte.id);
+        this.loadedReportIds.add(reporte.id);
+      }
+    }
+  }
+
+  private cargarDatosRestantes(startIndex: number) {
+    const reportesRestantes = this.listReports.slice(startIndex);
+    for (const reporte of reportesRestantes) {
+      if (!this.loadedReportIds.has(reporte.id)) {
+        this.cargarDatosReporteAsync(reporte.id);
+        this.loadedReportIds.add(reporte.id);
+      }
+    }
+  }
+
+  private async getInitialReports() {
+    try {
+      const res: any = await firstValueFrom(this.srvReports.getReports());
+      // Limpiar estados antes de actualizar la lista
+      this.imagesLoading.clear();
+      this.loadedReportIds.clear();
+      
+      this.listReports = res.data
+        .map((reporte: any) => {
+          reporte.ubicacion = JSON.parse(reporte.ubicacion);
+          reporte.imagen_url = `${environment.urlApiImages}${reporte.imagen_url}`;
+          this.imagesLoading.set(reporte.id, true);
+          return reporte;
+        })
+        .sort((a: any, b: any) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+
+      // Precargar imágenes
+      this.preloadImages();
+    } catch (error) {
+      console.error('Error al obtener los reportes:', error);
+    }
+  }
+
+  private setupInfiniteScroll() {
+    window.addEventListener('scroll', () => {
+      if (this.isLoading || this.allReportsLoaded) return;
+
+      const scrollHeight = document.documentElement.scrollHeight;
+      const scrollTop = window.scrollY;
+      const clientHeight = document.documentElement.clientHeight;
+
+      if (scrollHeight - scrollTop <= clientHeight + 100) {
+        this.loadMoreReports();
+      }
     });
-    this.cargarContadoresComentarios();
+  }
+
+  private async loadMoreReports() {
+    if (this.isLoading || this.allReportsLoaded) return;
+
+    this.isLoading = true;
+    const start = (this.currentPage + 1) * this.pageSize;
+    const end = start + this.pageSize;
+    const nextReports = this.listReports.slice(start, end);
+
+    if (nextReports.length === 0) {
+      this.allReportsLoaded = true;
+      this.isLoading = false;
+      return;
+    }
+
+    // Cargar datos para cada reporte
+    for (const reporte of nextReports) {
+      await this.cargarDatosReporteAsync(reporte.id);
+      // Asegurarse de que la imagen se cargue
+      if (!this.imagesLoading.has(reporte.id)) {
+        this.precargarImagen(reporte);
+      }
+    }
+
+    this.currentPage++;
+    this.isLoading = false;
+  }
+
+  private async cargarDatosReporteAsync(reporteId: number): Promise<void> {
+    try {
+      this.reaccionesLoading[reporteId] = true;
+      this.comentariosLoading[reporteId] = true;
+
+      const [reacciones, comentarios] = await Promise.all([
+        firstValueFrom(this.interaccionesService.getReacciones(reporteId)),
+        firstValueFrom(this.interaccionesService.getComentariosCount(reporteId))
+      ]);
+
+      // Procesar reacciones
+      this.reaccionesPorReporte[reporteId] = reacciones.data.map(reaccion => ({
+        ...reaccion,
+        usuarios: reaccion.usuarios?.map(usuario => ({
+          ...usuario,
+          nombre: usuario.nombre || 'Usuario'
+        })) || []
+      }));
+
+      this.comentariosCounts[reporteId] = comentarios.data;
+    } catch (error) {
+      console.error(`Error cargando datos para reporte ${reporteId}:`, error);
+    } finally {
+      this.reaccionesLoading[reporteId] = false;
+      this.comentariosLoading[reporteId] = false;
+    }
+  }
+
+  private cargarDatosReporte(reporteId: number) {
+    if (!this.loadedReportIds.has(reporteId)) {
+      this.cargarDatosReporteAsync(reporteId);
+      this.loadedReportIds.add(reporteId);
+    }
+  }
+
+  private precargarImagen(reporte: any) {
+    this.imagesLoading.set(reporte.id, true);
+    const img = new Image();
+    img.onload = () => this.imagesLoading.set(reporte.id, false);
+    img.onerror = () => this.imagesLoading.set(reporte.id, false);
+    img.src = reporte.imagen_url;
+  }
+
+  private preloadImages() {
+    // Cargar las primeras 5 imágenes
+    const initialBatch = this.listReports.slice(0, this.batchSize);
+    initialBatch.forEach(reporte => this.precargarImagen(reporte));
+
+    // Programar la carga del siguiente lote cuando se complete el primero
+    setTimeout(() => {
+      const nextBatch = this.listReports.slice(this.batchSize);
+      nextBatch.forEach(reporte => this.precargarImagen(reporte));
+    }, 1000);
+  }
+
+  isImageLoading(reporteId: number): boolean {
+    return this.imagesLoading.get(reporteId) !== false;
   }
 
   async getReports() {
@@ -253,7 +410,17 @@ export default class HomeComponent implements OnInit {
     try {
       const response = await firstValueFrom(this.srvReports.crearReporte(formData));
       this.resetForm();
-      await this.getReports();
+      await this.getInitialReports(); // Cambiamos getReports por getInitialReports
+      
+      // Forzar la carga de datos e imagen del nuevo reporte
+      if (response.data && response.data.id) {
+        this.precargarImagen({
+          id: response.data.id,
+          imagen_url: `${environment.urlApiImages}${response.data.imagen_url}`
+        });
+        await this.cargarDatosReporteAsync(response.data.id);
+      }
+      
       this.toggleFormulario();
     } catch (error: any) {
       this.errorMessage = error.message || 'Error al crear el reporte. Inténtalo de nuevo.';
@@ -314,20 +481,7 @@ export default class HomeComponent implements OnInit {
   }
 
   cargarReaccionesParaReporte(reporteId: number) {
-    this.interaccionesService.getReacciones(reporteId).subscribe({
-      next: (response) => {
-        // Ensure usuarios array exists and has the correct structure
-        const reaccionesProcessed = response.data.map(reaccion => ({
-          ...reaccion,
-          usuarios: reaccion.usuarios?.map(usuario => ({
-            ...usuario,
-            nombre: usuario.nombre || 'Usuario'
-          })) || []
-        }));
-        this.reaccionesPorReporte[reporteId] = reaccionesProcessed;
-      },
-      error: (error) => console.error('Error al cargar reacciones:', error)
-    });
+    return this.cargarDatosReporteAsync(reporteId);
   }
 
   toggleReaccion(reporteId: number, tipoReaccion: number) {
@@ -424,21 +578,38 @@ export default class HomeComponent implements OnInit {
       parseInt(this.userId),
       this.comentarioPadreId || undefined
     ).subscribe({
-      next: () => {
+      next: async () => {
         // Limpiar estados
         this.comentariosPorReporte[reporteId] = '';
         this.comentarioRespuestaTexto = '';
         const padreId = this.comentarioPadreId;
         this.comentarioPadreId = null;
 
-        // Actualizar vistas
-        this.cargarContadoresComentarios();
-        if (this.mostrarComentarios[reporteId]) {
-          this.cargarComentariosPrincipales(reporteId);
-          // Si estábamos respondiendo a un comentario, recargar sus respuestas
-          if (padreId && this.mostrarRespuestas[padreId]) {
-            this.cargarRespuestas(padreId);
+        // Actualizar inmediatamente los contadores y comentarios
+        try {
+          // Actualizar el contador de comentarios
+          const countResponse = await firstValueFrom(
+            this.interaccionesService.getComentariosCount(reporteId)
+          );
+          this.comentariosCounts[reporteId] = countResponse.data;
+
+          // Si los comentarios están visibles, actualizar la lista
+          if (this.mostrarComentarios[reporteId]) {
+            const comentariosResponse = await firstValueFrom(
+              this.interaccionesService.getComentariosPrincipales(reporteId)
+            );
+            this.comentariosPrincipales[reporteId] = comentariosResponse.data;
+
+            // Si estábamos respondiendo a un comentario, actualizar sus respuestas
+            if (padreId && this.mostrarRespuestas[padreId]) {
+              const respuestasResponse = await firstValueFrom(
+                this.interaccionesService.getRespuestasComentario(padreId)
+              );
+              this.comentariosRespuestas[padreId] = respuestasResponse.data;
+            }
           }
+        } catch (error) {
+          console.error('Error al actualizar comentarios:', error);
         }
       },
       error: (error) => {

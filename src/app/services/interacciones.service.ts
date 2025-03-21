@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, delay, shareReplay } from 'rxjs';
 import { Reaccion, Comentario, ReaccionesResponse, ComentariosResponse } from '../interfaces/interacciones.interface';
 import { environment } from '../../environments/environment.development';
 
@@ -9,6 +9,7 @@ import { environment } from '../../environments/environment.development';
 })
 export class InteraccionesService {
   private apiUrl = environment.urlApi;
+  private cache = new Map<string, Observable<any>>();
 
   constructor(private http: HttpClient) { }
 
@@ -21,7 +22,10 @@ export class InteraccionesService {
   }
 
   getReacciones(reporteId: number): Observable<ReaccionesResponse> {
-    return this.http.get<ReaccionesResponse>(`${this.apiUrl}reacciones/${reporteId}`);
+    return this.http.get<ReaccionesResponse>(`${this.apiUrl}reacciones/${reporteId}`)
+      .pipe(
+        shareReplay(1)
+      );
   }
 
   // Endpoints actualizados de comentarios
