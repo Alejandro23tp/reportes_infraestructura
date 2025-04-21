@@ -1,16 +1,22 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { HeaderComponent } from './components/header/header.component';
+import { MobileNavComponent } from './components/mobile-nav/mobile-nav.component';
 import { AuthService } from './services/auth.service';
 import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, HeaderComponent, CommonModule],
+  imports: [RouterOutlet, HeaderComponent, MobileNavComponent, CommonModule],
   template: `
-    <app-header *ngIf="isLoggedIn$ | async"></app-header>
-    <router-outlet></router-outlet>
+    <div class="flex flex-col min-h-screen">
+      <app-header *ngIf="isLoggedIn$ | async"></app-header>
+      <main class="flex-grow pb-16 md:pb-0">
+        <router-outlet></router-outlet>
+      </main>
+      <app-mobile-nav *ngIf="isLoggedIn$ | async" class="md:hidden"></app-mobile-nav>
+    </div>
   `
 })
 export class AppComponent {

@@ -36,14 +36,26 @@ interface Ubicacion {
   selector: 'app-mapa',
   standalone: true,
   imports: [CommonModule, FormsModule],
+  styles: [`
+    :host {
+      display: block;
+      height: 100%;
+    }
+    #map {
+      height: 100vh;
+      width: 100%;
+    }
+  `],
   template: `
-    <div class="w-full h-screen relative">
+    <div class="w-full h-screen relative" role="main">
       <!-- Panel de control flotante -->
       <div class="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
         <!-- Botón toggle para móvil -->
         <button 
           (click)="toggleControls()" 
           class="md:hidden bg-white p-3 rounded-lg shadow-lg hover:bg-gray-50 transition-colors"
+          aria-label="Toggle controls"
+          title="Toggle filter controls"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
@@ -54,6 +66,8 @@ interface Ubicacion {
         <div 
           [class.hidden]="!showControls && isMobile"
           class="bg-white p-4 rounded-lg shadow-lg max-w-xs w-full md:w-auto transition-all duration-300"
+          role="region"
+          aria-label="Map filters"
         >
           <div class="flex justify-between items-center mb-4">
             <h3 class="font-bold text-lg">Filtros</h3>
@@ -65,11 +79,13 @@ interface Ubicacion {
           <!-- Filtros -->
           <div class="space-y-3">
             <div>
-              <label class="block text-sm font-medium mb-1">Estado</label>
+              <label for="estado-select" class="block text-sm font-medium mb-1">Estado</label>
               <select 
+                id="estado-select"
                 [(ngModel)]="filtroEstado" 
                 (change)="aplicarFiltros()" 
                 class="w-full p-2 rounded border bg-white shadow-sm"
+                aria-label="Filtrar por estado"
               >
                 <option value="">Todos los estados</option>
                 <option value="pendiente">Pendiente</option>
@@ -79,11 +95,13 @@ interface Ubicacion {
             </div>
 
             <div>
-              <label class="block text-sm font-medium mb-1">Urgencia</label>
+              <label for="urgencia-select" class="block text-sm font-medium mb-1">Urgencia</label>
               <select 
+                id="urgencia-select"
                 [(ngModel)]="filtroUrgencia" 
                 (change)="aplicarFiltros()" 
                 class="w-full p-2 rounded border bg-white shadow-sm"
+                aria-label="Filtrar por urgencia"
               >
                 <option value="">Todas las urgencias</option>
                 <option value="baja">Baja</option>
@@ -97,9 +115,11 @@ interface Ubicacion {
               <label class="flex items-center gap-2 cursor-pointer">
                 <input 
                   type="checkbox" 
+                  id="toggle-areas"
                   [(ngModel)]="mostrarAreas" 
                   (change)="toggleAreas()"
                   class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                  aria-label="Mostrar áreas afectadas"
                 >
                 <span class="text-sm">Mostrar áreas afectadas</span>
               </label>
@@ -107,6 +127,8 @@ interface Ubicacion {
               <button 
                 (click)="centerMap()" 
                 class="w-full p-2 text-sm bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors"
+                aria-label="Centrar mapa"
+                title="Centrar mapa en los marcadores"
               >
                 Centrar mapa
               </button>
@@ -134,7 +156,7 @@ interface Ubicacion {
         </div>
       </div>
 
-      <div id="map" class="w-full h-full"></div>
+      <div id="map" class="w-full h-full" role="application" aria-label="Mapa de reportes"></div>
     </div>
   `
 })
@@ -169,20 +191,35 @@ export class MapaComponent implements OnInit {
   }
 
   private initMap(): void {
-    this.map = L.map('map').setView([-2.239527, -80.910316], 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(this.map);
+    try {
+      if (!document.getElementById('map')) {
+        console.error('Elemento del mapa no encontrado');
+        return;
+      }
 
-    // Agregar control de capas
-    this.layerGroups = {
-      alta: L.layerGroup().addTo(this.map),
-      normal: L.layerGroup().addTo(this.map),
-      baja: L.layerGroup().addTo(this.map)
-    };
+      this.map = L.map('map', {
+        center: [-2.239527, -80.910316],
+        zoom: 13,
+        zoomControl: true,
+      });
 
-    // Agregar escala
-    L.control.scale().addTo(this.map);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(this.map);
+
+      // Agregar control de capas
+      this.layerGroups = {
+        alta: L.layerGroup().addTo(this.map),
+        normal: L.layerGroup().addTo(this.map),
+        baja: L.layerGroup().addTo(this.map)
+      };
+
+      // Agregar escala
+      L.control.scale().addTo(this.map);
+    } catch (error) {
+      console.error('Error al inicializar el mapa:', error);
+    }
   }
 
   aplicarFiltros(): void {

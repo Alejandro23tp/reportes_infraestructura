@@ -1,48 +1,98 @@
-<div class="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
-  <div class="max-w-md w-full space-y-8">
-    <div>
-      <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
-        Iniciar sesión
-      </h2>
+<div class="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 overflow-hidden relative">
+  <!-- Círculos animados con efecto glow -->
+  <div class="absolute inset-0 flex items-center justify-center">
+    <div class="absolute w-[500px] h-[500px] border-2 border-blue-400/20 animate-lava1 rounded-full
+                hover:border-blue-400/40 hover:shadow-lg transition-all duration-300
+                shadow-[0_0_15px_rgba(59,130,246,0.5)]"></div>
+    <div class="absolute w-[450px] h-[450px] border-2 border-purple-400/20 animate-lava2 rounded-full
+                hover:border-purple-400/40 hover:shadow-lg transition-all duration-300
+                shadow-[0_0_15px_rgba(168,85,247,0.5)]"></div>
+    <div class="absolute w-[400px] h-[400px] border-2 border-pink-400/20 animate-lava3 rounded-full
+                hover:border-pink-400/40 hover:shadow-lg transition-all duration-300
+                shadow-[0_0_15px_rgba(236,72,153,0.5)]"></div>
+  </div>
+
+  <!-- Contenedor del formulario -->
+  <div class="relative z-20 w-80 bg-white/10 dark:bg-gray-800/20 backdrop-blur-md rounded-xl p-8 shadow-xl">
+    <!-- Logo/Icono -->
+    <div class="flex justify-center mb-6">
+      <div class="p-3 bg-blue-500/10 rounded-full">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+      </div>
     </div>
-    <form class="mt-8 space-y-6" (ngSubmit)="onSubmit()" #loginForm="ngForm">
-      <div class="rounded-md shadow-sm -space-y-px">
+
+    <h2 class="text-xl font-bold text-center text-gray-900 dark:text-white mb-6">Iniciar sesión</h2>
+    
+    <form class="space-y-4" (ngSubmit)="onSubmit()" #loginForm="ngForm">
+      <div class="space-y-4">
         <div>
           <input
             [(ngModel)]="credentials.email"
             name="email"
             type="email"
             required
-            class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 focus:z-10 sm:text-sm"
-            placeholder="Correo electrónico">
+            #emailInput="ngModel"
+            class="w-full px-3 py-2 text-sm border border-gray-300/50 dark:border-gray-600/50 rounded-md
+                   bg-white/40 dark:bg-gray-800/40 placeholder-gray-500 dark:placeholder-gray-400
+                   focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            placeholder="tesig@example.com"
+            aria-label="Correo electrónico">
+          <div *ngIf="emailInput.invalid && (emailInput.dirty || emailInput.touched)" 
+               class="text-xs text-red-500 mt-1 ml-1">
+            Por favor, ingrese un correo válido
+          </div>
         </div>
+        
         <div>
           <input
             [(ngModel)]="credentials.password"
             name="password"
             type="password"
             required
-            class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 focus:z-10 sm:text-sm"
-            placeholder="Contraseña">
+            #passwordInput="ngModel"
+            class="w-full px-3 py-2 text-sm border border-gray-300/50 dark:border-gray-600/50 rounded-md
+                   bg-white/40 dark:bg-gray-800/40 placeholder-gray-500 dark:placeholder-gray-400
+                   focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            placeholder="Contraseña"
+            aria-label="Contraseña">
+          <div *ngIf="passwordInput.invalid && (passwordInput.dirty || passwordInput.touched)"
+               class="text-xs text-red-500 mt-1 ml-1">
+            La contraseña es requerida
+          </div>
+        </div>
+
+        <!-- Checkbox Recordarme -->
+        <div class="flex items-center">
+          <input type="checkbox" id="remember" class="rounded border-gray-300/50 text-blue-600 focus:ring-blue-500">
+          <label for="remember" class="ml-2 text-sm text-gray-600 dark:text-gray-300">Recordarme</label>
         </div>
       </div>
 
-      <div *ngIf="error" class="text-red-500 text-sm text-center">
-        {{ error }}
-      </div>
+      <button
+        type="submit"
+        [disabled]="!loginForm.valid || loading"
+        class="w-full py-2.5 px-4 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md
+               transition-all transform hover:scale-[1.02] hover:shadow-lg disabled:opacity-50
+               disabled:cursor-not-allowed">
+        <div class="flex items-center justify-center space-x-2">
+          <span>{{ loading ? 'Iniciando...' : 'Iniciar sesión' }}</span>
+          <svg *ngIf="loading" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+        </div>
+      </button>
 
-      <div>
-        <button
-          type="submit"
-          [disabled]="!loginForm.valid || loading"
-          class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400">
-          {{ loading ? 'Iniciando sesión...' : 'Iniciar sesión' }}
-        </button>
-      </div>
-
-      <div class="text-center">
-        <a routerLink="/register" class="text-sm text-blue-600 hover:text-blue-500">
-          ¿No tienes una cuenta? Regístrate
+      <div class="flex flex-col space-y-2 text-center pt-4">
+        <a routerLink="/forgot-password" class="text-xs text-blue-600 hover:text-blue-500 dark:text-blue-400
+                                       dark:hover:text-blue-300 transition-colors">
+          ¿Olvidaste tu contraseña?
+        </a>
+        <a routerLink="/register" class="text-xs text-blue-600 hover:text-blue-500 dark:text-blue-400
+                                  dark:hover:text-blue-300 transition-colors">
+          ¿No tienes una cuenta? Registrarte
         </a>
       </div>
     </form>

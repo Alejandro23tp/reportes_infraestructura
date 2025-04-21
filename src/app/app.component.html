@@ -1,3 +1,8 @@
-
-<router-outlet />
+<div class="flex flex-col min-h-screen">
+  <app-header />
+  <main class="flex-grow pb-16 md:pb-0"> <!-- padding-bottom para el espacio de la navegación móvil -->
+    <router-outlet />
+  </main>
+  <app-mobile-nav class="md:hidden" /> <!-- Asegurarse que solo se muestre en móvil -->
+</div>
 

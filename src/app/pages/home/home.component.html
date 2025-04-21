@@ -1,43 +1,10 @@
 <div class="min-h-screen bg-gray-100 dark:bg-gray-900">
   <div class="container mx-auto px-4 py-8">
-    <!-- Layout principal con sidebar -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-      <!-- Sidebar izquierdo -->
-      <div class="hidden lg:block lg:col-span-3">
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 sticky top-8">
-          <div class="flex items-center space-x-4 mb-6">
-            <div class="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-500"></div>
-            <div>
-              <h3 class="font-bold text-gray-900 dark:text-white">Bienvenido, {{ userName }}</h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400">Reportes Comunitarios</p>
-            </div>
-          </div>
-          <nav class="space-y-2">
-            <a href="#" class="flex items-center space-x-3 px-4 py-3 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300">
-              <span>🏠</span>
-              <span>Inicio</span>
-            </a>
-            <a href="#" class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
-              <span>📊</span>
-              <span>Estadísticas</span>
-            </a>
-            <a href="#" class="flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
-              <span>⭐</span>
-              <span>Destacados</span>
-            </a>
-            <button 
-              (click)="onLogout()" 
-              class="flex items-center space-x-3 px-4 py-3 w-full rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 dark:text-red-300">
-              <span>🚪</span>
-              <span>Cerrar Sesión</span>
-            </button>
-          </nav>
-        </div>
-      </div>
-
+    <!-- Layout principal -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <!-- Feed principal -->
-      <div class="lg:col-span-6">
-        <!-- Botón para abrir modal -->
+      <div class="lg:col-span-2">
+        <!-- Botón para crear reporte -->
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
           <div class="flex items-center space-x-4">
             <div class="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700"></div>
@@ -115,7 +82,10 @@
                           type="button" 
                           (click)="getGeolocalizacion()" 
                           class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-all">
-                          📍
+                          <svg class="w-6 h-6 text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.8 13.938h-.011a7 7 0 1 0-11.464.144h-.016l.14.171c.1.127.2.251.3.371L12 21l5.13-6.248c.194-.209.374-.429.54-.659l.13-.155Z"/>
+                          </svg>
                         </button>
                       </div>
                       <div *ngIf="geoLocationMessage" 
@@ -181,8 +151,7 @@
 
         <!-- Lista de reportes -->
         <div class="space-y-6">
-          <div *ngFor="let reporte of listReports" 
-               class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden transform hover:shadow-xl transition-all">
+          <div *ngFor="let reporte of listReports" class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
             <!-- Cabecera del reporte -->
             <div class="p-6">
               <div class="flex items-center justify-between mb-4">
@@ -238,30 +207,50 @@
               <!-- Reacciones -->
               <div class="reacciones-container">
                 <ng-container *ngIf="!reaccionesLoading[reporte.id]; else loadingReacciones">
-                  <div class="flex items-center gap-2 mb-4">
-                    <!-- Botones fijos de reacción -->
-                    <div class="flex items-center gap-2">
+                  <div class="flex items-center gap-4 mb-4">
+                    <div class="flex items-center gap-4">
                       <button 
                         (click)="toggleReaccion(reporte.id, 1)"
                         [class.bg-blue-100]="haReaccionado(reporte.id, 1)"
-                        class="px-3 py-1 text-sm rounded-full flex items-center space-x-1 border">
-                        <span>👍</span>
+                        [class.text-blue-600]="haReaccionado(reporte.id, 1)"
+                        [class.dark:text-blue-400]="haReaccionado(reporte.id, 1)"
+                        class="group px-3 py-1 text-sm rounded-full flex items-center space-x-2 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors text-gray-500 dark:text-gray-400">
+                        <div class="rounded-full p-1 transition-all">
+                          <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" class="fill-current">
+                            <path d="M720-120H280v-520l280-280 50 50q7 7 11.5 19t4.5 23v14l-44 174h258q32 0 56 24t24 56v80q0 7-2 15t-4 15L794-168q-9 20-30 34t-44 14Zm-360-80h360l120-280v-80H480l54-220-174 174v406Zm0-406v406-406Zm-80-34v80H160v360h120v80H80v-520h200Z"/>
+                          </svg>
+                        </div>
                         <span>{{ getReaccionesPorTipo(reporte.id, 1) }}</span>
                       </button>
+
+                      <!-- Reacción Tipo 2 (Corazón/Rojo) -->
                       <button 
-                        (click)="toggleReaccion(reporte.id, 2)"
-                        [class.bg-blue-100]="haReaccionado(reporte.id, 2)"
-                        class="px-3 py-1 text-sm rounded-full flex items-center space-x-1 border">
-                        <span>❤️</span>
-                        <span>{{ getReaccionesPorTipo(reporte.id, 2) }}</span>
+                      (click)="toggleReaccion(reporte.id, 2)"
+                      [class.bg-red-100]="haReaccionado(reporte.id, 2)"
+                      [class.text-red-600]="haReaccionado(reporte.id, 2)"
+                      [class.dark:text-red-400]="haReaccionado(reporte.id, 2)"
+                      class="group px-3 py-1 text-sm rounded-full flex items-center space-x-2 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors text-gray-500 dark:text-gray-400">
+                      <div class="rounded-full p-1 transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" class="fill-current">
+                          <path d="m480-120-58-52q-101-91-167-157T150-447.5Q111-500 95.5-544T80-634q0-94 63-157t157-63q52 0 99 22t81 62q34-40 81-62t99-22q94 0 157 63t63 157q0 46-15.5 90T810-447.5Q771-395 705-329T538-172l-58 52Z"/>
+                        </svg>
+                      </div>
+                      <span>{{ getReaccionesPorTipo(reporte.id, 2) }}</span>
                       </button>
+
                       <button 
-                        (click)="toggleReaccion(reporte.id, 3)"
-                        [class.bg-blue-100]="haReaccionado(reporte.id, 3)"
-                        class="px-3 py-1 text-sm rounded-full flex items-center space-x-1 border">
-                        <span>😠</span>
-                        <span>{{ getReaccionesPorTipo(reporte.id, 3) }}</span>
-                      </button>
+                      (click)="toggleReaccion(reporte.id, 3)"
+                      [class.bg-yellow-100]="haReaccionado(reporte.id, 3)"
+                      [class.text-yellow-600]="haReaccionado(reporte.id, 3)"
+                      [class.dark:text-yellow-400]="haReaccionado(reporte.id, 3)"
+                      class="group px-3 py-1 text-sm rounded-full flex items-center space-x-2 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors text-gray-500 dark:text-gray-400">
+                      <div class="rounded-full p-1 transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" class="fill-current">
+                          <path d="M480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q133 0 226.5-93.5T800-480q0-133-93.5-226.5T480-800q-133 0-226.5 93.5T160-480q0 133 93.5 226.5T480-160Zm60-364 20-12q2 24 19 40t41 16q25 0 42.5-17.5T680-540q0-15-7-28.5T654-590l26-15-20-35-140 80 20 36Zm-120 0 20-36-140-80-20 35 26 15q-12 8-19 21.5t-7 28.5q0 25 17.5 42.5T340-480q24 0 41-16t19-40l20 12Zm60 84q-71 0-125 45.5T279-280h402q-22-69-76-114.5T480-440Zm0-40Z"/>
+                        </svg>
+                      </div>
+                      <span>{{ getReaccionesPorTipo(reporte.id, 3) }}</span>
+                    </button>
                     </div>
 
                     <!-- Lista de usuarios que reaccionaron -->
@@ -384,18 +373,23 @@
         </div>
       </div>
 
-      <!-- Sidebar derecho -->
-      <div class="hidden lg:block lg:col-span-3">
+      <!-- Sidebar derecho con estadísticas -->
+      <div class="hidden lg:block">
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 sticky top-8">
-          <h3 class="font-bold text-gray-900 dark:text-white mb-4">Reportes Destacados</h3>
+          <h3 class="font-bold text-gray-900 dark:text-white mb-4">Estadísticas</h3>
+          <!-- Estadísticas resumen -->
           <div class="space-y-4">
-            <!-- Elementos destacados aquí -->
-            <div class="flex items-center space-x-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
-              <div class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30"></div>
-              <div class="flex-1">
-                <p class="text-sm font-medium text-gray-900 dark:text-white">Reporte más votado</p>
-                <p class="text-xs text-gray-500 dark:text-gray-400">Hace 2 horas</p>
-              </div>
+            <div class="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <h4 class="text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Reportes totales</h4>
+              <p class="text-2xl font-bold text-gray-900 dark:text-white">reportestotales</p>
+            </div>
+            <div class="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <h4 class="text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">En proceso</h4>
+              <p class="text-2xl font-bold text-blue-600">reportesEnProceso</p>
+            </div>
+            <div class="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <h4 class="text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Completados</h4>
+              <p class="text-2xl font-bold text-green-600">reportesCompletados</p>
             </div>
           </div>
         </div>

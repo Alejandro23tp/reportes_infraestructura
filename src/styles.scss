@@ -3,3 +3,50 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+@keyframes lava1 {
+  0%, 100% { 
+    transform: rotate(0deg) scale(1); 
+    border-radius: 40% 60% 60% 40%/60% 40% 60% 40%; 
+  }
+  50% { 
+    transform: rotate(180deg) scale(1.1); 
+    border-radius: 50% 50% 60% 40%/50% 60% 40% 50%; 
+  }
+}
+
+@keyframes lava2 {
+  0%, 100% { 
+    transform: rotate(0deg) scale(1); 
+    border-radius: 45% 55% 55% 45%/55% 45% 55% 45%; 
+  }
+  50% { 
+    transform: rotate(180deg) scale(1.15); 
+    border-radius: 60% 40% 50% 50%/50% 60% 40% 50%; 
+  }
+}
+
+@keyframes lava3 {
+  0%, 100% { 
+    transform: rotate(0deg) scale(1); 
+    border-radius: 35% 65% 65% 35%/65% 35% 65% 35%; 
+  }
+  50% { 
+    transform: rotate(180deg) scale(1.1); 
+    border-radius: 55% 45% 60% 40%/45% 55% 45% 55%; 
+  }
+}
+
+.animate-lava1 {
+  animation: lava1 15s ease-in-out infinite;
+}
+
+.animate-lava2 {
+  animation: lava2 18s ease-in-out infinite;
+}
+
+.animate-lava3 {
+  animation: lava3 20s ease-in-out infinite;
+}
+

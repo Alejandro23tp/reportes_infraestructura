@@ -1,97 +1,90 @@
-<header class="bg-white dark:bg-gray-800 shadow-lg sticky top-0 z-50">
+<header class="bg-white/95 dark:bg-gray-800/95 shadow-lg sticky top-0 z-50 backdrop-blur-sm transition-all duration-300">
   <div class="container mx-auto px-4">
     <div class="flex items-center justify-between h-16">
       <!-- Logo y título -->
       <div class="flex items-center space-x-4">
-        <div class="w-10 h-10 rounded-lg bg-gradient-to-tr from-blue-600 to-purple-600 flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform">
+        <div class="w-10 h-10 rounded-lg bg-gradient-to-tr from-blue-600 to-purple-600 flex items-center justify-center shadow-lg">
           <span class="text-white text-lg font-bold">RC</span>
         </div>
-        <div class="hidden md:block">
-          <h1 class="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Reportes Comunitarios
-          </h1>
-        </div>
+        <h1 class="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          Reportes Comunitarios
+        </h1>
       </div>
 
-      <!-- Menú central -->
+      <!-- Navegación desktop -->
       <nav class="hidden md:flex items-center space-x-1">
+        <!-- Inicio -->
         <a routerLink="/" 
            routerLinkActive="bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300"
+           [routerLinkActiveOptions]="{exact: true}"
            class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
           <div class="flex items-center space-x-2">
-            <span>🏠</span>
+            <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" class="fill-current">
+              <path d="M240-200h120v-240h240v240h120v-360L480-740 240-560v360Zm-80 80v-480l320-240 320 240v480H520v-240h-80v240H160Zm320-350Z"/>
+            </svg>
             <span>Inicio</span>
           </div>
         </a>
-        <a routerLink="/estadisticas" 
+
+        <!-- Notificaciones -->
+        <a routerLink="/notificaciones" 
            routerLinkActive="bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300"
            class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
           <div class="flex items-center space-x-2">
-            <span>📊</span>
-            <span>Estadísticas</span>
+            <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" class="fill-current">
+              <path d="M160-200v-80h80v-280q0-83 50-147.5T420-792v-28q0-25 17.5-42.5T480-880q25 0 42.5 17.5T540-820v28q80 20 130 84.5T720-560v280h80v80H160Zm320-300Zm0 420q-33 0-56.5-23.5T400-160h160q0 33-23.5 56.5T480-80ZM320-280h320v-280q0-66-47-113t-113-47q-66 0-113 47t-47 113v280Z"/>
+            </svg>
+            <span>Notificaciones</span>
           </div>
         </a>
-        <a routerLink="/destacados" 
-           routerLinkActive="bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300"
-           class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
-          <div class="flex items-center space-x-2">
-            <span>⭐</span>
-            <span>Destacados</span>
-          </div>
-        </a>
+
+        <!-- Mapa -->
         <a routerLink="/mapa" 
            routerLinkActive="bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300"
            class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
           <div class="flex items-center space-x-2">
-            <span>🗺️</span>
+            <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" class="fill-current">
+              <path d="M480-301q99-80 149.5-154T680-594q0-90-56-148t-144-58q-88 0-144 58t-56 148q0 65 50.5 139T480-301Zm0 101Q339-304 269.5-402T200-594q0-125 78-205.5T480-880q124 0 202 80.5T760-594q0 94-69.5 192T480-200Zm0-320q33 0 56.5-23.5T560-600q0-33-23.5-56.5T480-680q-33 0-56.5 23.5T400-600q0 33 23.5 56.5T480-520ZM200-80v-80h560v80H200Zm280-520Z"/>
+            </svg>
             <span>Mapa</span>
           </div>
         </a>
       </nav>
 
-      <!-- Perfil y logout -->
-      <div class="flex items-center">
-        <!-- Perfil - Desktop -->
-        <div class="hidden md:flex items-center space-x-4">
-          <div class="flex items-center space-x-3 px-4 py-2 rounded-lg bg-gray-50 dark:bg-gray-700/50">
-            <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-600 to-pink-600 flex items-center justify-center">
-              <span class="text-white text-sm font-bold">{{ userName[0].toUpperCase() }}</span>
-            </div>
-            <div class="text-sm">
-              <p class="font-medium text-gray-900 dark:text-white">{{ userName }}</p>
-              <p class="text-xs text-gray-500 dark:text-gray-400">{{ userRole }}</p>
-            </div>
+      <!-- Perfil, configuración y logout -->
+      <div class="hidden md:flex items-center space-x-2">
+        <button class="p-2 rounded-lg text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50">
+          <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" class="fill-current">
+            <path d="m370-80-16-128q-13-5-24.5-12T307-235l-119 50L78-375l103-78q-1-7-1-13.5v-27q0-6.5 1-13.5L78-585l110-190 119 50q11-8 23-15t24-12l16-128h220l16 128q13 5 24.5 12t22.5 15l119-50 110 190-103 78q1 7 1 13.5v27q0 6.5-2 13.5l103 78-110 190-118-50q-11 8-23 15t-24 12L590-80H370Zm112-260q58 0 99-41t41-99q0-58-41-99t-99-41q-58 0-99 41t-41 99q0 58 41 99t99 41Z"/>
+          </svg>
+        </button>
+        <div class="flex items-center space-x-3 px-4 py-2 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+          <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-600 to-pink-600 flex items-center justify-center">
+            <span class="text-white text-sm font-bold">{{ userName[0].toUpperCase() }}</span>
           </div>
-          <button 
-            (click)="onLogout()"
-            class="px-4 py-2 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors">
-            <div class="flex items-center space-x-2">
-              <svg class="w-5 h-5 fill-current" viewBox="0 0 20 20" version="1.1" xmlns="http://www.w3.org/2000/svg">
-                <g id="layer1">
-                  <path d="M 0 1 L 0 20 L 12 20 L 12 16 L 11 16 L 11 19 L 1 19 L 1 2 L 11 2 L 11 5 L 12 5 L 12 1 L 0 1 z M 15 7 L 18 10 L 5 10 L 5 11 L 18 11 L 15 14 L 16.5 14 L 20 10.5 L 16.5 7 L 15 7 z"/>
-                </g>
-              </svg>
-              <span>Cerrar Sesión</span>
-            </div>
-          </button>
+          <div class="text-sm">
+            <p class="font-medium text-gray-900 dark:text-white">{{ userName }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">{{ userRole }}</p>
+          </div>
         </div>
-
-        <!-- Menú móvil -->
-        <div class="flex items-center md:hidden space-x-2">
-          <div class="flex items-center space-x-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700/50">
-            <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-purple-600 to-pink-600 flex items-center justify-center">
-              <span class="text-white text-xs font-bold">{{ userName[0].toUpperCase() }}</span>
-            </div>
-          </div>
-          <button 
-            (click)="onLogout()"
-            class="p-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors">
+        <button 
+          (click)="onLogout()"
+          class="px-4 py-2 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors">
+          <div class="flex items-center space-x-2">
             <svg class="w-5 h-5 fill-current" viewBox="0 0 20 20" version="1.1" xmlns="http://www.w3.org/2000/svg">
               <g id="layer1">
                 <path d="M 0 1 L 0 20 L 12 20 L 12 16 L 11 16 L 11 19 L 1 19 L 1 2 L 11 2 L 11 5 L 12 5 L 12 1 L 0 1 z M 15 7 L 18 10 L 5 10 L 5 11 L 18 11 L 15 14 L 16.5 14 L 20 10.5 L 16.5 7 L 15 7 z"/>
               </g>
             </svg>
-          </button>
+            <span>Cerrar Sesión</span>
+          </div>
+        </button>
+      </div>
+
+      <!-- Avatar móvil -->
+      <div class="md:hidden">
+        <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-600 to-pink-600 flex items-center justify-center">
+          <span class="text-white text-sm font-bold">{{ userName[0].toUpperCase() }}</span>
         </div>
       </div>
     </div>

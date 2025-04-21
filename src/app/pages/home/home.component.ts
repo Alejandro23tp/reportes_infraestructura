@@ -67,34 +67,19 @@ export default class HomeComponent implements OnInit {
     this.authService.getUser().subscribe(user => {
       if (user) {
         this.userName = user.nombre || '';
-        this.userId = user.sub || ''; // El ID del usuario viene en el claim 'sub' del JWT
-        // Solo cargamos los datos iniciales una vez
-        this.cargarDatosInicialesPrioritarios();
+        this.userId = user.sub || '';
+        // Cargar todos los datos iniciales
+        this.cargarDatosIniciales();
       }
     });
     this.setupInfiniteScroll();
   }
 
-  private async cargarDatosInicialesPrioritarios() {
-    // Tomar las primeras 3 publicaciones
-    const publicacionesPrioritarias = this.listReports.slice(0, 3);
-    
-    // Cargar sus datos de forma prioritaria
-    for (const reporte of publicacionesPrioritarias) {
-      if (!this.loadedReportIds.has(reporte.id)) {
-        await this.cargarDatosReporteAsync(reporte.id);
-        this.loadedReportIds.add(reporte.id);
-      }
-    }
-  }
-
-  private cargarDatosRestantes(startIndex: number) {
-    const reportesRestantes = this.listReports.slice(startIndex);
-    for (const reporte of reportesRestantes) {
-      if (!this.loadedReportIds.has(reporte.id)) {
-        this.cargarDatosReporteAsync(reporte.id);
-        this.loadedReportIds.add(reporte.id);
-      }
+  private async cargarDatosIniciales() {
+    // Cargar datos para todos los reportes
+    for (const reporte of this.listReports) {
+      await this.cargarDatosReporteAsync(reporte.id);
+      this.loadedReportIds.add(reporte.id);
     }
   }
 
@@ -151,12 +136,15 @@ export default class HomeComponent implements OnInit {
       return;
     }
 
-    // Cargar datos para cada reporte
+    // Cargar datos para cada reporte nuevo
     for (const reporte of nextReports) {
-      await this.cargarDatosReporteAsync(reporte.id);
-      // Asegurarse de que la imagen se cargue
-      if (!this.imagesLoading.has(reporte.id)) {
-        this.precargarImagen(reporte);
+      if (!this.loadedReportIds.has(reporte.id)) {
+        await this.cargarDatosReporteAsync(reporte.id);
+        this.loadedReportIds.add(reporte.id);
+        // Precargar imagen si es necesario
+        if (!this.imagesLoading.has(reporte.id)) {
+          this.precargarImagen(reporte);
+        }
       }
     }
 
@@ -165,6 +153,10 @@ export default class HomeComponent implements OnInit {
   }
 
   private async cargarDatosReporteAsync(reporteId: number): Promise<void> {
+    if (this.loadedReportIds.has(reporteId)) {
+      return; // Si ya están cargados los datos, no los volvemos a cargar
+    }
+
     try {
       this.reaccionesLoading[reporteId] = true;
       this.comentariosLoading[reporteId] = true;
@@ -174,18 +166,28 @@ export default class HomeComponent implements OnInit {
         firstValueFrom(this.interaccionesService.getComentariosCount(reporteId))
       ]);
 
-      // Procesar reacciones
-      this.reaccionesPorReporte[reporteId] = reacciones.data.map(reaccion => ({
-        ...reaccion,
-        usuarios: reaccion.usuarios?.map(usuario => ({
-          ...usuario,
-          nombre: usuario.nombre || 'Usuario'
-        })) || []
-      }));
+      // Asegurarnos de que los datos se guarden correctamente
+      if (reacciones?.data) {
+        this.reaccionesPorReporte[reporteId] = reacciones.data.map(reaccion => ({
+          ...reaccion,
+          usuarios: reaccion.usuarios?.map(usuario => ({
+            ...usuario,
+            nombre: usuario.nombre || 'Usuario'
+          })) || []
+        }));
+      }
 
-      this.comentariosCounts[reporteId] = comentarios.data;
+      if (comentarios?.data) {
+        this.comentariosCounts[reporteId] = comentarios.data;
+      }
+
+      // Marcar como cargado solo si todo fue exitoso
+      this.loadedReportIds.add(reporteId);
+
     } catch (error) {
       console.error(`Error cargando datos para reporte ${reporteId}:`, error);
+      // Remover del set si hubo error para intentar cargar de nuevo después
+      this.loadedReportIds.delete(reporteId);
     } finally {
       this.reaccionesLoading[reporteId] = false;
       this.comentariosLoading[reporteId] = false;
