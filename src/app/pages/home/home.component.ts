@@ -5,7 +5,6 @@ import { firstValueFrom } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CategoriasService } from '../../services/categorias.service';
-import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../services/auth.service';
 import { environment } from '../../../environments/environment.development';
 import { InteraccionesService } from '../../services/interacciones.service';
@@ -42,16 +41,11 @@ export default class HomeComponent implements OnInit {
   comentariosRespuestas: { [key: number]: any[] } = {};
   mostrarComentarios: { [key: number]: boolean } = {};
   mostrarRespuestas: { [key: number]: boolean } = {};
-  comentarioEnEdicion: { [key: number]: string } = {};
   comentarioPadreId: number | null = null;
   comentarioRespuestaTexto: string = '';
   loading = true;
   reaccionesLoading: { [key: number]: boolean } = {};
   comentariosLoading: { [key: number]: boolean } = {};
-  private srvReports = inject(ReportesService);
-  private srvCategorias = inject(CategoriasService);
-  private authService = inject(AuthService);
-  private interaccionesService = inject(InteraccionesService);
   private pageSize = 5;
   private currentPage = 0;
   private isLoading = false;
@@ -60,6 +54,13 @@ export default class HomeComponent implements OnInit {
   imagesLoading = new Map<number, boolean>();
   private currentImageIndex = 0;
   private batchSize = 5;
+
+  constructor(
+    private srvReports: ReportesService,
+    private srvCategorias: CategoriasService,
+    private authService: AuthService,
+    private interaccionesService: InteraccionesService
+  ) {}
 
   async ngOnInit() {
     await this.getInitialReports();
@@ -194,13 +195,6 @@ export default class HomeComponent implements OnInit {
     }
   }
 
-  private cargarDatosReporte(reporteId: number) {
-    if (!this.loadedReportIds.has(reporteId)) {
-      this.cargarDatosReporteAsync(reporteId);
-      this.loadedReportIds.add(reporteId);
-    }
-  }
-
   private precargarImagen(reporte: any) {
     this.imagesLoading.set(reporte.id, true);
     const img = new Image();
@@ -283,6 +277,7 @@ export default class HomeComponent implements OnInit {
     
     try {
       const response = await firstValueFrom(this.srvReports.analizarImagen(file));
+      console.log('Respuesta de análisis de imagen:', response);
       
       if (!response.success) {
         if (response.error_tipo === 'imagen_no_relevante') {
@@ -301,19 +296,6 @@ export default class HomeComponent implements OnInit {
       
       if (response.success && response.categoria_sugerida) {
         this.categoriaSugerida = response.categoria_sugerida;
-        
-        let categoriaEncontrada = this.categorias.find(
-          cat => cat.nombre.toLowerCase() === this.categoriaSugerida.toLowerCase()
-        );
-
-        if (categoriaEncontrada) {
-          this.nuevoReporte.categoria_id = categoriaEncontrada.id;
-        } else {
-          const categoriaMasCercana = this.encontrarCategoriaMasCercana(this.categoriaSugerida);
-          if (categoriaMasCercana) {
-            this.nuevoReporte.categoria_id = categoriaMasCercana.id;
-          }
-        }
       }
     } catch (error) {
       console.error('Error al analizar la imagen:', error);
@@ -326,26 +308,6 @@ export default class HomeComponent implements OnInit {
     }
   }
 
-  private encontrarCategoriaMasCercana(categoriaSugerida: string): any {
-    const categoriasMap: { [key: string]: string } = {
-      'Daños estructurales': 'estructura',
-      'Daños en redes de servicios': 'servicios',
-      'Daños en infraestructuras de transporte': 'transporte',
-      'Daños causados por fenómenos naturales': 'natural',
-      'Daños en espacios públicos': 'publico',
-      'Impacto ambiental asociado': 'ambiental',
-      'Daños por conflictos humanos': 'vandalismo'
-    };
-
-    const categoriaKey = categoriasMap[categoriaSugerida];
-    if (categoriaKey) {
-      return this.categorias.find(cat => 
-        cat.nombre.toLowerCase().includes(categoriaKey.toLowerCase())
-      );
-    }
-    return null;
-  }
-
   // Obtiene la ubicación actual
   getGeolocalizacion() {
     if (navigator.geolocation) {
@@ -354,6 +316,8 @@ export default class HomeComponent implements OnInit {
         (position) => {
           const lat = position.coords.latitude;
           const lon = position.coords.longitude;
+          const precision = position.coords.accuracy; // 👈 Radio de error en metros
+          //console.log(`Precisión: ${precision} metros`);
           this.nuevoReporte.ubicacion = JSON.stringify({ lat, lon });
           this.geoLocationSuccess = true;
           this.geoLocationMessage = 'Ubicación obtenida correctamente';
@@ -556,8 +520,6 @@ export default class HomeComponent implements OnInit {
       case 1: return '👍';
       case 2: return '❤️';
       case 3: return '😠';
-      case 4: return '😮';
-      case 5: return '😂';
       default: return '👍';
     }
   }
