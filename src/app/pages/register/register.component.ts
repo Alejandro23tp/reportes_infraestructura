@@ -18,7 +18,7 @@ export class RegisterComponent {
     password: '',
     cedula: '',
     direccion: '',
-    rol: 'user' as 'admin' | 'user'
+    rol: 'usuario' as 'admin' | 'usuario'
   };
   loading = false;
   error = '';

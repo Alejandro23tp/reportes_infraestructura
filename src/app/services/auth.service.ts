@@ -62,7 +62,8 @@ export class AuthService {
     password: string,
     cedula: string,
     direccion: string,
-    rol: 'admin' | 'user'
+    //rol: 'admin' | 'user'
+    rol: 'admin' | 'usuario' 
   }): Observable<any> {
     console.log('Enviando datos de registro:', userData);
     return this.http.post(`${this.API_URL}/register`, userData).pipe(

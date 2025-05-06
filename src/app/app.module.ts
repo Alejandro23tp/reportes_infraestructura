@@ -11,6 +11,7 @@ import { authInterceptor } from './interceptors/auth.interceptor';
 import { AppRoutingModule } from './app-routing.module';
 import HomeComponent from './pages/home/home.component';
 import { InteraccionesService } from './services/interacciones.service';
+import { GoogleMapsModule } from '@angular/google-maps';
 
 @NgModule({
   declarations: [
@@ -22,7 +23,8 @@ import { InteraccionesService } from './services/interacciones.service';
     FormsModule,
     AppComponent,
     HomeComponent,
-    LoginComponent
+    LoginComponent,
+    GoogleMapsModule
 
   ],
   providers: [

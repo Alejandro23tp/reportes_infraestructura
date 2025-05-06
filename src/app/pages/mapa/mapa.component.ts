@@ -1,24 +1,8 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, AfterViewInit, OnDestroy } from '@angular/core';
+import { environment } from '../../../environments/environment.development';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import * as L from 'leaflet';
 import { ReportesService } from '../../services/reportes.service';
-
-// Add this after imports
-const iconRetinaUrl = 'assets/marker-icon-2x.png';
-const iconUrl = 'assets/marker-icon.png';
-const shadowUrl = 'assets/marker-shadow.png';
-const iconDefault = L.icon({
-  iconRetinaUrl,
-  iconUrl,
-  shadowUrl,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  tooltipAnchor: [16, -28],
-  shadowSize: [41, 41]
-});
-L.Marker.prototype.options.icon = iconDefault;
 
 interface Ubicacion {
   id: number;
@@ -30,196 +14,204 @@ interface Ubicacion {
   estado: string;
   urgencia: string;
   categoria: string;
+  imagen?: string; // Nuevo campo para la URL de la imagen (opcional)
+}
+
+interface ActiveFilter {
+  type: 'estado' | 'urgencia' | 'categoria' | 'busqueda';
+  value: string;
+  label: string;
+}
+
+interface UrgenciaResumen {
+  alta: number;
+  normal: number;
+  baja: number;
 }
 
 @Component({
   selector: 'app-mapa',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  styles: [`
-    :host {
-      display: block;
-      height: 100%;
-    }
-    #map {
-      height: 100vh;
-      width: 100%;
-    }
-  `],
-  template: `
-    <div class="w-full h-screen relative" role="main">
-      <!-- Panel de control flotante -->
-      <div class="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
-        <!-- Botón toggle para móvil -->
-        <button 
-          (click)="toggleControls()" 
-          class="md:hidden bg-white p-3 rounded-lg shadow-lg hover:bg-gray-50 transition-colors"
-          aria-label="Toggle controls"
-          title="Toggle filter controls"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
-          </svg>
-        </button>
-
-        <!-- Panel de controles (responsive) -->
-        <div 
-          [class.hidden]="!showControls && isMobile"
-          class="bg-white p-4 rounded-lg shadow-lg max-w-xs w-full md:w-auto transition-all duration-300"
-          role="region"
-          aria-label="Map filters"
-        >
-          <div class="flex justify-between items-center mb-4">
-            <h3 class="font-bold text-lg">Filtros</h3>
-            <span class="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
-              {{markers.length}} reportes
-            </span>
-          </div>
-
-          <!-- Filtros -->
-          <div class="space-y-3">
-            <div>
-              <label for="estado-select" class="block text-sm font-medium mb-1">Estado</label>
-              <select 
-                id="estado-select"
-                [(ngModel)]="filtroEstado" 
-                (change)="aplicarFiltros()" 
-                class="w-full p-2 rounded border bg-white shadow-sm"
-                aria-label="Filtrar por estado"
-              >
-                <option value="">Todos los estados</option>
-                <option value="pendiente">Pendiente</option>
-                <option value="en_proceso">En proceso</option>
-                <option value="completado">Completado</option>
-              </select>
-            </div>
-
-            <div>
-              <label for="urgencia-select" class="block text-sm font-medium mb-1">Urgencia</label>
-              <select 
-                id="urgencia-select"
-                [(ngModel)]="filtroUrgencia" 
-                (change)="aplicarFiltros()" 
-                class="w-full p-2 rounded border bg-white shadow-sm"
-                aria-label="Filtrar por urgencia"
-              >
-                <option value="">Todas las urgencias</option>
-                <option value="baja">Baja</option>
-                <option value="normal">Normal</option>
-                <option value="alta">Alta</option>
-              </select>
-            </div>
-
-            <!-- Toggles -->
-            <div class="space-y-2 pt-2 border-t">
-              <label class="flex items-center gap-2 cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  id="toggle-areas"
-                  [(ngModel)]="mostrarAreas" 
-                  (change)="toggleAreas()"
-                  class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                  aria-label="Mostrar áreas afectadas"
-                >
-                <span class="text-sm">Mostrar áreas afectadas</span>
-              </label>
-
-              <button 
-                (click)="centerMap()" 
-                class="w-full p-2 text-sm bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors"
-                aria-label="Centrar mapa"
-                title="Centrar mapa en los marcadores"
-              >
-                Centrar mapa
-              </button>
-            </div>
-
-            <!-- Leyenda -->
-            <div class="pt-2 border-t">
-              <p class="text-sm font-medium mb-2">Leyenda</p>
-              <div class="grid grid-cols-2 gap-2 text-xs">
-                <div class="flex items-center gap-1">
-                  <span class="w-3 h-3 rounded-full bg-red-500"></span>
-                  <span>Alta</span>
-                </div>
-                <div class="flex items-center gap-1">
-                  <span class="w-3 h-3 rounded-full bg-orange-500"></span>
-                  <span>Normal</span>
-                </div>
-                <div class="flex items-center gap-1">
-                  <span class="w-3 h-3 rounded-full bg-green-500"></span>
-                  <span>Baja</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div id="map" class="w-full h-full" role="application" aria-label="Mapa de reportes"></div>
-    </div>
-  `
+  templateUrl: './mapa.component.html',
+  styleUrls: ['./mapa.component.scss'],
 })
-export class MapaComponent implements OnInit {
-  private map!: L.Map;
-  public markers: L.Marker[] = [];
-  private circles: L.Circle[] = [];
-  private layerGroups: { [key: string]: L.LayerGroup } = {};
+export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {  
+  private map!: google.maps.Map;
+  public markers: google.maps.Marker[] = [];
+  private circles: google.maps.Circle[] = [];
+  private layerGroups: { [key: string]: google.maps.Marker[] } = {
+    alta: [],
+    normal: [],
+    baja: [],
+  };
   private reportesService = inject(ReportesService);
-  
+
   filtroEstado: string = '';
   filtroUrgencia: string = '';
+  filtroCategoria: string = '';
+  filtroBusqueda: string = '';
   mostrarAreas: boolean = false;
   private datosReportes: Ubicacion[] = [];
-  showControls: boolean = true;
+  showDrawer: boolean = false;
   isMobile: boolean = false;
+  activeFilters: ActiveFilter[] = [];
+  categorias: string[] = [];
+  resumen: {
+    urgencia: UrgenciaResumen;
+    total: number;
+  } = {
+    urgencia: { alta: 0, normal: 0, baja: 0 },
+    total: 0,
+  };
 
   ngOnInit() {
     this.checkScreenSize();
     window.addEventListener('resize', () => this.checkScreenSize());
-    this.initMap();
-    this.cargarUbicaciones();
+    this.loadGoogleMapsScript();
+    this.inicializarFlowbite();
   }
 
-  private getColorUrgencia(urgencia: string): string {
-    switch(urgencia.toLowerCase()) {
-      case 'alta': return 'red';
-      case 'normal': return 'orange';
-      case 'baja': return 'green';
-      default: return 'blue';
+  ngAfterViewInit() {
+    // Exponer openImageModal en el ámbito global
+    (window as any).openImageModal = (imageUrl: string) => {
+      this.openImageModal(imageUrl);
+    };
+  }
+
+  private inicializarFlowbite() {
+    // Inicializa tooltips de Flowbite
+    import('flowbite').then((flowbite) => {
+      flowbite.initFlowbite();
+    });
+  }
+
+  private loadGoogleMapsScript() {
+    if (typeof google === 'undefined') {
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyCKaEistYI1k8LoB4UT8pfytxB2BKu3iq0&libraries=places`;
+      script.async = true;
+      script.defer = true;
+      script.onload = () => {
+        console.log('Google Maps script loaded');
+        this.initMap();
+      };
+      script.onerror = () => console.error('Error loading Google Maps script');
+      document.head.appendChild(script);
+    } else {
+      this.initMap();
     }
   }
 
   private initMap(): void {
     try {
-      if (!document.getElementById('map')) {
+      const mapElement = document.getElementById('map');
+      if (!mapElement) {
         console.error('Elemento del mapa no encontrado');
         return;
       }
 
-      this.map = L.map('map', {
-        center: [-2.239527, -80.910316],
+      this.map = new google.maps.Map(mapElement, {
+        center: { lat: -2.239527, lng: -80.910316 },
         zoom: 13,
+        mapTypeId: google.maps.MapTypeId.ROADMAP,
         zoomControl: true,
+        scaleControl: true,
       });
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap contributors'
-      }).addTo(this.map);
-
-      // Agregar control de capas
-      this.layerGroups = {
-        alta: L.layerGroup().addTo(this.map),
-        normal: L.layerGroup().addTo(this.map),
-        baja: L.layerGroup().addTo(this.map)
-      };
-
-      // Agregar escala
-      L.control.scale().addTo(this.map);
+      this.cargarUbicaciones();
     } catch (error) {
       console.error('Error al inicializar el mapa:', error);
     }
+  }
+
+  private getColorUrgencia(urgencia: string): string {
+    switch (urgencia.toLowerCase()) {
+      case 'alta':
+        return '#ff0000';
+      case 'normal':
+        return '#ffa500';
+      case 'baja':
+        return '#008000';
+      default:
+        return '#0000ff';
+    }
+  }
+
+  private actualizarResumen(ubicaciones: Ubicacion[]): void {
+    this.resumen = {
+      urgencia: { alta: 0, normal: 0, baja: 0 },
+      total: ubicaciones.length,
+    };
+    ubicaciones.forEach((reporte) => {
+      const urgencia = reporte.urgencia.toLowerCase() as keyof UrgenciaResumen;
+      if (urgencia in this.resumen.urgencia) {
+        this.resumen.urgencia[urgencia]++;
+      }
+    });
+  }
+
+  private actualizarCategorias(ubicaciones: Ubicacion[]): void {
+    this.categorias = [...new Set(ubicaciones.map((r) => r.categoria))].sort();
+  }
+
+  private actualizarFiltrosActivos(): void {
+    this.activeFilters = [];
+    if (this.filtroEstado) {
+      this.activeFilters.push({
+        type: 'estado',
+        value: this.filtroEstado,
+        label: `Estado: ${this.filtroEstado}`,
+      });
+    }
+    if (this.filtroUrgencia) {
+      this.activeFilters.push({
+        type: 'urgencia',
+        value: this.filtroUrgencia,
+        label: `Urgencia: ${this.filtroUrgencia}`,
+      });
+    }
+    if (this.filtroCategoria) {
+      this.activeFilters.push({
+        type: 'categoria',
+        value: this.filtroCategoria,
+        label: `Categoría: ${this.filtroCategoria}`,
+      });
+    }
+    if (this.filtroBusqueda) {
+      this.activeFilters.push({
+        type: 'busqueda',
+        value: this.filtroBusqueda,
+        label: `Búsqueda: ${this.filtroBusqueda}`,
+      });
+    }
+  }
+
+  removeFilter(filter: ActiveFilter): void {
+    switch (filter.type) {
+      case 'estado':
+        this.filtroEstado = '';
+        break;
+      case 'urgencia':
+        this.filtroUrgencia = '';
+        break;
+      case 'categoria':
+        this.filtroCategoria = '';
+        break;
+      case 'busqueda':
+        this.filtroBusqueda = '';
+        break;
+    }
+    this.aplicarFiltros();
+  }
+
+  limpiarFiltros(): void {
+    this.filtroEstado = '';
+    this.filtroUrgencia = '';
+    this.filtroCategoria = '';
+    this.filtroBusqueda = '';
+    this.mostrarAreas = false;
+    this.aplicarFiltros();
   }
 
   aplicarFiltros(): void {
@@ -230,61 +222,111 @@ export class MapaComponent implements OnInit {
     if (this.mostrarAreas) {
       this.agregarAreas();
     } else {
-      this.circles.forEach(circle => circle.remove());
+      this.circles.forEach((circle) => circle.setMap(null));
       this.circles = [];
     }
   }
 
   private agregarAreas(): void {
-    this.circles.forEach(circle => circle.remove());
+    this.circles.forEach((circle) => circle.setMap(null));
     this.circles = [];
 
-    this.datosReportes.forEach(reporte => {
-      const circle = L.circle(
-        [reporte.ubicacion.lat, reporte.ubicacion.lng],
-        {
-          radius: 100, // Radio en metros
-          color: this.getColorUrgencia(reporte.urgencia),
-          fillColor: this.getColorUrgencia(reporte.urgencia),
-          fillOpacity: 0.2
-        }
-      ).addTo(this.map);
+    this.datosReportes.forEach((reporte) => {
+      const color = this.getColorUrgencia(reporte.urgencia);
+      const circle = new google.maps.Circle({
+        center: { lat: reporte.ubicacion.lat, lng: reporte.ubicacion.lng },
+        radius: 100,
+        strokeColor: color,
+        strokeOpacity: 0.8,
+        strokeWeight: 2,
+        fillColor: color,
+        fillOpacity: 0.2,
+        map: this.map,
+      });
       this.circles.push(circle);
     });
   }
 
-  private mostrarUbicaciones(ubicaciones: Ubicacion[]): void {
-    // Limpiar marcadores existentes
-    Object.values(this.layerGroups).forEach(layer => layer.clearLayers());
-    this.markers = [];
+  // Variables para el modal de la imagen
+  showImageModal: boolean = false;
+  selectedImageUrl: string | null = null;
 
-    const ubicacionesFiltradas = ubicaciones.filter(reporte => {
+  // Método para abrir el modal
+  openImageModal(imageUrl: string) {
+    this.selectedImageUrl = imageUrl;
+    this.showImageModal = true;
+  }
+
+  // Método para cerrar el modal
+  closeImageModal() {
+    this.showImageModal = false;
+    this.selectedImageUrl = null;
+  }
+
+  private mostrarUbicaciones(ubicaciones: Ubicacion[]): void {
+    Object.values(this.layerGroups).forEach((group) =>
+      group.forEach((marker) => marker.setMap(null))
+    );
+    this.markers = [];
+    this.layerGroups = { alta: [], normal: [], baja: [] };
+
+    const ubicacionesFiltradas = ubicaciones.filter((reporte) => {
       const cumpleEstado = !this.filtroEstado || reporte.estado === this.filtroEstado;
       const cumpleUrgencia = !this.filtroUrgencia || reporte.urgencia === this.filtroUrgencia;
-      return cumpleEstado && cumpleUrgencia;
+      const cumpleCategoria = !this.filtroCategoria || reporte.categoria === this.filtroCategoria;
+      const cumpleBusqueda =
+        !this.filtroBusqueda ||
+        reporte.id.toString().includes(this.filtroBusqueda) ||
+        reporte.ubicacion.descripcion.toLowerCase().includes(this.filtroBusqueda.toLowerCase());
+      return cumpleEstado && cumpleUrgencia && cumpleCategoria && cumpleBusqueda;
     });
 
-    ubicacionesFiltradas.forEach(reporte => {
+    ubicacionesFiltradas.forEach((reporte) => {
       const color = this.getColorUrgencia(reporte.urgencia);
-      const customIcon = L.divIcon({
-        html: `<div style="background-color: ${color}; width: 25px; height: 25px; border-radius: 50%; border: 2px solid white;"></div>`,
-        className: 'custom-marker',
-        iconSize: [25, 25],
-        iconAnchor: [12, 12]
+      const marker = new google.maps.Marker({
+        position: { lat: reporte.ubicacion.lat, lng: reporte.ubicacion.lng },
+        map: this.map,
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          fillColor: color,
+          fillOpacity: 0.8,
+          strokeColor: '#ffffff',
+          strokeWeight: 2,
+          scale: 12,
+        },
+        title: `ID: ${reporte.id}`,
       });
 
-      const marker = L.marker([reporte.ubicacion.lat, reporte.ubicacion.lng], { icon: customIcon })
-        .bindPopup(`
-          <div class="p-2">
-            <p class="font-bold">ID: ${reporte.id}</p>
-            <p class="text-sm">Estado: ${reporte.estado}</p>
-            <p class="text-sm">Urgencia: ${reporte.urgencia}</p>
-            <p class="text-sm">Categoría: ${reporte.categoria}</p>
-            <p class="text-sm">Descripción: ${reporte.ubicacion.descripcion}</p>
+      // Construir el contenido del InfoWindow
+      let infoWindowContent = `
+        <div class="p-2">
+          <p class="font-bold">ID: ${reporte.id}</p>
+          <p class="text-sm">Estado: ${reporte.estado}</p>
+          <p class="text-sm">Urgencia: ${reporte.urgencia}</p>
+          <p class="text-sm">Categoría: ${reporte.categoria}</p>
+          <p class="text-sm">Descripción: ${reporte.ubicacion.descripcion}</p>
+      `;
+
+      // Agregar la imagen si existe
+      if (reporte.imagen) {
+        infoWindowContent += `
+          <div class="mt-2">
+            <img src="${reporte.imagen}" alt="Foto del reporte ${reporte.id}" class="w-24 h-24 object-cover rounded cursor-pointer" onclick="window.openImageModal('${reporte.imagen}')">
           </div>
-        `);
-      
-      this.layerGroups[reporte.urgencia.toLowerCase()].addLayer(marker);
+        `;
+      }
+
+      infoWindowContent += `</div>`;
+
+      const infoWindow = new google.maps.InfoWindow({
+        content: infoWindowContent,
+      });
+
+      marker.addListener('click', () => {
+        infoWindow.open(this.map, marker);
+      });
+
+      this.layerGroups[reporte.urgencia.toLowerCase()].push(marker);
       this.markers.push(marker);
     });
 
@@ -292,9 +334,11 @@ export class MapaComponent implements OnInit {
       this.agregarAreas();
     }
 
+    this.actualizarResumen(ubicacionesFiltradas);
+    this.actualizarFiltrosActivos();
+
     if (this.markers.length > 0) {
-      const group = L.featureGroup(this.markers);
-      this.map.fitBounds(group.getBounds(), { padding: [50, 50] });
+      this.centerMap();
     }
   }
 
@@ -302,33 +346,51 @@ export class MapaComponent implements OnInit {
     this.reportesService.getUbicaciones().subscribe({
       next: (response: any) => {
         if (response.status === 'success') {
-          this.datosReportes = response.data;
+          // Agregar la URL base a las imágenes
+          this.datosReportes = response.data.map((reporte: any) => ({
+            ...reporte,
+            imagen: `${environment.urlApiImages}${reporte.imagen}`
+          }));
+
+          console.log('Datos de reportes:', this.datosReportes);
+          this.actualizarCategorias(this.datosReportes);
           this.mostrarUbicaciones(this.datosReportes);
         }
       },
-      error: (error) => console.error('Error cargando ubicaciones:', error)
+      error: (error) => console.error('Error cargando ubicaciones:', error),
     });
-  }
+}
+
 
   private checkScreenSize() {
     this.isMobile = window.innerWidth < 768;
-    this.showControls = !this.isMobile;
+    this.showDrawer = !this.isMobile;
   }
 
-  toggleControls() {
-    this.showControls = !this.showControls;
+  toggleDrawer() {
+    this.showDrawer = !this.showDrawer;
   }
 
   centerMap() {
     if (this.markers.length > 0) {
-      const group = L.featureGroup(this.markers);
-      this.map.fitBounds(group.getBounds(), { padding: [50, 50] });
+      const bounds = new google.maps.LatLngBounds();
+      this.markers.forEach((marker) => {
+        const position = marker.getPosition();
+        if (position) {
+          bounds.extend(position);
+        }
+      });
+      this.map.fitBounds(bounds);
+      this.map.panBy(50, 50);
     } else {
-      this.map.setView([-2.239527, -80.910316], 13);
+      this.map.setCenter({ lat: -2.239527, lng: -80.910316 });
+      this.map.setZoom(13);
     }
   }
 
   ngOnDestroy() {
     window.removeEventListener('resize', () => this.checkScreenSize());
+    // Limpiar la función global
+    delete (window as any).openImageModal;
   }
 }

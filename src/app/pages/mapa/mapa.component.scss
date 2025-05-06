@@ -1,0 +1,134 @@
+// Variables para colores y transiciones
+$white: rgba(255, 255, 255, 0.95);
+$gray-200: #e5e7eb;
+$gray-700: #374151;
+$gray-900: #111827;
+$blue-300: #93c5fd;
+$transition-duration: 0.3s;
+
+// Estilo del host
+:host {
+  display: block;
+  min-height: 100vh; // Asegurar altura mínima
+  height: 100%;
+}
+
+// Estilo del contenedor principal
+.w-full.h-screen {
+  position: relative;
+}
+
+// Estilo del mapa
+#map {
+  min-height: 300px;
+  height: 100vh;
+  width: 100%;
+  min-height: 100vh; // Asegura que el mapa ocupe todo el espacio
+  position: relative; // Necesario para posicionar el botón dentro del mapa
+}
+
+// Estilo del panel
+#drawer-filtros {
+  transition: transform $transition-duration ease-in-out;
+
+  // Estilo para móviles (flotante)
+  @media (max-width: 767px) {
+    transform: translateX(100%);
+    background-color: $white;
+    backdrop-filter: blur(4px);
+    border-radius: 0.5rem 0 0 0.5rem;
+    box-shadow: -4px 0 10px rgba(0, 0, 0, 0.1);
+
+    &.translate-x-full {
+      transform: translateX(100%);
+    }
+
+    &:not(.translate-x-full) {
+      transform: translateX(0);
+    }
+  }
+
+  // Estilo para pantallas grandes (al lado)
+  @media (min-width: 768px) {
+    display: flex;
+    flex-direction: column;
+    background-color: transparent;
+    padding: 1rem;
+  }
+}
+
+// Estilo del botón toggle (solo visible en móvil)
+button[aria-label='Abrir filtros'],
+button[aria-label='Cerrar filtros'] {
+  background-color: $white;
+  backdrop-filter: blur(4px);
+  border: 1px solid $gray-200;
+  border-radius: 0.5rem;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 1);
+  }
+
+  svg {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .rotate-90 {
+    transform: rotate(90deg);
+  }
+}
+
+// Estilo de los tooltips
+.tooltip {
+  transition: opacity $transition-duration ease-in-out;
+
+  &.show {
+    visibility: visible;
+    opacity: 1;
+  }
+}
+
+// Estilo del contenido del panel
+#drawer-filtros {
+  .bg-white {
+    border-radius: 0.5rem;
+
+    h3 {
+      color: $gray-700;
+    }
+
+    label {
+      color: $gray-700;
+    }
+
+    input,
+    select {
+      border: 1px solid $gray-200;
+      border-radius: 0.5rem;
+      transition: all $transition-duration ease-in-out;
+
+      &:focus {
+        border-color: $blue-300;
+        box-shadow: 0 0 0 2px $blue-300;
+      }
+    }
+
+    button {
+      border-radius: 0.5rem;
+      transition: background-color $transition-duration ease-in-out;
+    }
+
+    .border-t {
+      border-color: $gray-200;
+    }
+
+    .text-gray-600 {
+      color: $gray-700;
+    }
+  }
+
+  .tooltip {
+    background-color: $gray-900;
+  }
+}
