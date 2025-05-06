@@ -89,7 +89,7 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
   private loadGoogleMapsScript() {
     if (typeof google === 'undefined') {
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyCKaEistYI1k8LoB4UT8pfytxB2BKu3iq0&libraries=places`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${environment.googleMapsApiKey}&libraries=places`;
       script.async = true;
       script.defer = true;
       script.onload = () => {
