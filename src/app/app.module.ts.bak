@@ -2,8 +2,8 @@ import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-
-
+import { AngularFireModule } from '@angular/fire/compat';
+import { AngularFireMessagingModule } from '@angular/fire/compat/messaging';
 import { AppComponent } from './app.component';
 
 import { LoginComponent } from './pages/login/login.component';
@@ -12,6 +12,7 @@ import { AppRoutingModule } from './app-routing.module';
 import HomeComponent from './pages/home/home.component';
 import { InteraccionesService } from './services/interacciones.service';
 import { GoogleMapsModule } from '@angular/google-maps';
+import { environment } from '../environments/environment.development';
 
 @NgModule({
   declarations: [
@@ -24,7 +25,9 @@ import { GoogleMapsModule } from '@angular/google-maps';
     AppComponent,
     HomeComponent,
     LoginComponent,
-    GoogleMapsModule
+    GoogleMapsModule,
+    AngularFireModule.initializeApp(environment.firebaseConfig),
+    AngularFireMessagingModule
 
   ],
   providers: [
