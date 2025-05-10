@@ -1,6 +1,6 @@
 export const environment = {
     urlApi: 'http://127.0.0.1:8000/api/',
-    urlApiImages: 'http://127.0.0.1:8000',
+    urlApiImages: 'http://127.0.0.1:8000/', // Asegúrate de que termine con /
     production: false,
     googleMapsApiKey: import.meta.env.NG_APP_GOOGLE_MAPS_API_KEY,
     firebaseConfig: {
@@ -8,7 +8,8 @@ export const environment = {
         authDomain: import.meta.env.NG_APP_FIREBASE_AUTH_DOMAIN,
         projectId: import.meta.env.NG_APP_FIREBASE_PROJECT_ID,
         storageBucket: import.meta.env.NG_APP_FIREBASE_STORAGE_BUCKET,
-        messagingSenderId: import.meta.env.NG_APP__FIREBASE_MESSAGING_SENDER_ID,
+        messagingSenderId: import.meta.env.NG_APP_FIREBASE_MESSAGING_SENDER_ID,
         appId: import.meta.env.NG_APP_FIREBASE_APP_ID,  
-    }
+    },
+    vapidKey: import.meta.env.NG_APP_VAPID_KEY,
 };

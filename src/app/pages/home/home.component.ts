@@ -227,7 +227,7 @@ export default class HomeComponent implements OnInit {
           reporte.ubicacion = JSON.parse(reporte.ubicacion);
           //reporte.imagen_url = `http://127.0.0.1:8000${reporte.imagen_url}`; 
           reporte.imagen_url = `${environment.urlApiImages}${reporte.imagen_url}`;
-          console.log('reporte.imagen_url', reporte.imagen_url);
+          console.log('reporte.imagen_url',environment.urlApiImages + reporte.imagen_url);
           return reporte;
         })
         .sort(

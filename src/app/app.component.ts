@@ -62,25 +62,35 @@ export class AppComponent implements OnInit {
       }
 
       const token = this.authService.getToken();
+      const apiUrl = `${environment.urlApiImages}api/subscribe`.trim();
+      console.log('URL de la petición:', apiUrl); // Debug URL
 
       getToken(messaging, {
-        vapidKey: 'BDIq0xeM3djwWGabQElECWuJJnZCuJ10FtP9bKlKqKAIw8Cv_Yvwbe1qT2an6FHoySx6hyiV1QijB6Vc6zp_BJE'
+        vapidKey: environment.vapidKey,
       })
         .then((fcmToken) => {
           console.log('Token FCM:', fcmToken);
           this.http
             .post(
-              'http://localhost:8000/api/subscribe',
+              apiUrl,
               { token: fcmToken },
               {
                 headers: {
-                  Authorization: `Bearer ${token}`
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+                  'Accept': 'application/json'
                 }
               }
             )
             .subscribe({
               next: (response) => console.log('Token enviado al backend:', response),
-              error: (err) => console.error('Error al enviar token:', err)
+              error: (err) => {
+                console.error('Error detallado:', {
+                  message: err.message,
+                  status: err.status,
+                  url: apiUrl
+                });
+              }
             });
         })
         .catch((err) => console.error('Error al obtener token:', err));
