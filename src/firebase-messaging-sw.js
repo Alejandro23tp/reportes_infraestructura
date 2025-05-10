@@ -2,12 +2,12 @@ importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js')
 importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js');
 
 firebase.initializeApp({
-  apiKey: process.env.VITE_FIREBASE_API_KEY,
-  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.VITE_FIREBASE_APP_ID
+  apiKey: "AIzaSyAalDt7642tucb7dqv22IjIiUvvkqPc-cs",
+  authDomain: "reportescomunitarios-93442.firebaseapp.com",
+  projectId: "reportescomunitarios-93442",
+  storageBucket: "reportescomunitarios-93442.firebasestorage.app",
+  messagingSenderId: "1014646354166",
+  appId: "1:1014646354166:web:16b5fe261e7ad677247cd7"
 });
 
 const messaging = firebase.messaging();
