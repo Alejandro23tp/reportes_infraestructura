@@ -420,21 +420,25 @@ export default class HomeComponent implements OnInit {
     return true;
   }
 
-  private resetForm() {
+  public resetForm() {
     this.nuevoReporte = {
+      categoria_id: '',
       descripcion: '',
-      ubicacion: '',
-      imagen: null,
-      estado: 'pendiente',
-      urgencia: 'normal',
-      categoria_id: ''
+      ubicacion: null,
+      // ... other initial properties
     };
     this.imagenPreview = null;
+    this.categoriaSugerida = null;
+    this.geoLocationMessage = '';
+    this.geoLocationSuccess = false;
     this.errorMessage = '';
   }
 
-  toggleFormulario() {
-    this.mostrarFormulario = !this.mostrarFormulario;
+  public toggleFormulario(show: boolean = false) {
+    this.mostrarFormulario = show;
+    if (!show) {
+      this.resetForm();
+    }
   }
 
   onLogout() {

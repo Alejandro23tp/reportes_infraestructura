@@ -9,7 +9,7 @@
           <div class="flex items-center space-x-4">
             <div class="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700"></div>
             <button 
-              (click)="toggleFormulario()" 
+              (click)="toggleFormulario(true)" 
               class="flex-1 text-left px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600/50">
               ¿Qué quieres reportar hoy?
             </button>
@@ -37,7 +37,7 @@
                 </div>
 
                 <!-- Formulario -->
-                <form (ngSubmit)="crearReporte()" #reporteForm="ngForm" class="space-y-6">
+                <form (ngSubmit)="crearReporte(); resetForm()" #reporteForm="ngForm" class="space-y-6">
                   <div *ngIf="errorMessage" class="bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 p-4">
                     <p class="text-red-700 dark:text-red-400">{{ errorMessage }}</p>
                   </div>
@@ -132,7 +132,7 @@
                   <div class="flex justify-end gap-3">
                     <button 
                       type="button"
-                      (click)="toggleFormulario()"
+                      (click)="toggleFormulario(false)"
                       class="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-all">
                       Cancelar
                     </button>
