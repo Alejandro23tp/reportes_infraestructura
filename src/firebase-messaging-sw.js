@@ -16,9 +16,9 @@ messaging.onBackgroundMessage((payload) => {
   console.log('Received background message:', payload);
 
   // Leer los datos del payload usando payload.data
-  const notificationTitle = payload.data?.title || 'Notificación';
-  const notificationBody = payload.data?.body || 'Cuerpo de la notificación';
-  const messageId = payload.data?.messageId || '';
+  const notificationTitle = payload.notification.title || 'Notificación';
+  const notificationBody = payload.notification.body || 'Cuerpo de la notificación';
+  const messageId = payload.messageId || '';
 
   // Verificar si ya existe una notificación con el mismo ID
   self.registration.getNotifications().then(notifications => {
