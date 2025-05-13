@@ -18,44 +18,25 @@ export class ReportesService {
   }
 
   crearReporte(formData: FormData): Observable<any> {
-    console.log('Enviando formData:', {
-      usuario_id: formData.get('usuario_id'),
-      categoria_id: formData.get('categoria_id'),
-      imagen: formData.get('imagen'),
-      descripcion: formData.get('descripcion'),
-      ubicacion: formData.get('ubicacion')
-    });
-
-    return this.http.post(`${environment.urlApi}reportes/crear`, formData)
-      .pipe(
-        catchError((error: HttpErrorResponse) => {
-          console.error('Error completo del servidor:', error);
-          
-          if (error.status === 500) {
+      return this.http.post(`${environment.urlApi}reportes/crear`, formData)
+        .pipe(
+          catchError((error: HttpErrorResponse) => {
+            console.error('Error completo:', error);
+            let errorMessage = 'Error al crear el reporte';
+            
+            if (error.status === 422 && error.error?.errors) {
+              return throwError(() => ({
+                message: 'Error de validación',
+                errors: error.error.errors
+              }));
+            }
+            
             return throwError(() => ({
-              type: 'ServerError',
-              message: error.error?.message || 'Error interno del servidor',
-              error: error.error,
-              details: error.error?.details || error.message
+              message: error.error?.message || errorMessage,
+              status: error.status
             }));
-          }
-          
-          if (error.status === 422) {
-            return throwError(() => ({
-              type: 'ValidationError',
-              message: error.error?.message || 'Error de validación',
-              details: error.error?.errors || error.error
-            }));
-          }
-
-          return throwError(() => ({
-            type: 'GeneralError',
-            message: 'Error al crear el reporte',
-            error: error,
-            details: error.message
-          }));
-        })
-      );
+          })
+        );
   }
 
   getUbicaciones() {

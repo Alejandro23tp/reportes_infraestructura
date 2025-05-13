@@ -14,7 +14,7 @@ interface Ubicacion {
   estado: string;
   urgencia: string;
   categoria: string;
-  imagen?: string; // Nuevo campo para la URL de la imagen (opcional)
+  imagen?: string;
 }
 
 interface ActiveFilter {
@@ -24,9 +24,10 @@ interface ActiveFilter {
 }
 
 interface UrgenciaResumen {
-  alta: number;
-  normal: number;
-  baja: number;
+  critico: number;
+  alto: number;
+  medio: number;
+  bajo: number;
 }
 
 @Component({
@@ -41,9 +42,10 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
   public markers: google.maps.Marker[] = [];
   private circles: google.maps.Circle[] = [];
   private layerGroups: { [key: string]: google.maps.Marker[] } = {
-    alta: [],
-    normal: [],
-    baja: [],
+    critico: [],
+    alto: [],
+    medio: [],
+    bajo: []
   };
   private reportesService = inject(ReportesService);
 
@@ -61,7 +63,7 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
     urgencia: UrgenciaResumen;
     total: number;
   } = {
-    urgencia: { alta: 0, normal: 0, baja: 0 },
+    urgencia: { critico: 0, alto: 0, medio: 0, bajo: 0 },
     total: 0,
   };
 
@@ -73,14 +75,12 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit() {
-    // Exponer openImageModal en el ámbito global
     (window as any).openImageModal = (imageUrl: string) => {
       this.openImageModal(imageUrl);
     };
   }
 
   private inicializarFlowbite() {
-    // Inicializa tooltips de Flowbite
     import('flowbite').then((flowbite) => {
       flowbite.initFlowbite();
     });
@@ -125,29 +125,38 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  private normalizarUrgencia(urgencia: string): string {
+    const urgenciaLower = urgencia.toLowerCase();
+    switch(urgenciaLower) {
+      case 'crítico':
+      case 'critico': return 'critico';
+      case 'alto': return 'alto';
+      case 'medio': return 'medio';
+      case 'bajo': return 'bajo';
+      default: return 'bajo';
+    }
+  }
+
   private getColorUrgencia(urgencia: string): string {
-    switch (urgencia.toLowerCase()) {
-      case 'alta':
-        return '#ff0000';
-      case 'normal':
-        return '#ffa500';
-      case 'baja':
-        return '#008000';
-      default:
-        return '#0000ff';
+    const urgenciaNormalizada = this.normalizarUrgencia(urgencia);
+    switch(urgenciaNormalizada) {
+      case 'critico': return '#ff0000';
+      case 'alto': return '#ff4500';
+      case 'medio': return '#ffa500';
+      case 'bajo': return '#008000';
+      default: return '#0000ff';
     }
   }
 
   private actualizarResumen(ubicaciones: Ubicacion[]): void {
     this.resumen = {
-      urgencia: { alta: 0, normal: 0, baja: 0 },
+      urgencia: { critico: 0, alto: 0, medio: 0, bajo: 0 },
       total: ubicaciones.length,
     };
+    
     ubicaciones.forEach((reporte) => {
-      const urgencia = reporte.urgencia.toLowerCase() as keyof UrgenciaResumen;
-      if (urgencia in this.resumen.urgencia) {
-        this.resumen.urgencia[urgencia]++;
-      }
+      const urgencia = this.normalizarUrgencia(reporte.urgencia) as keyof UrgenciaResumen;
+      this.resumen.urgencia[urgencia]++;
     });
   }
 
@@ -247,32 +256,28 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  // Variables para el modal de la imagen
   showImageModal: boolean = false;
   selectedImageUrl: string | null = null;
 
-  // Método para abrir el modal
   openImageModal(imageUrl: string) {
     this.selectedImageUrl = imageUrl;
     this.showImageModal = true;
   }
 
-  // Método para cerrar el modal
   closeImageModal() {
     this.showImageModal = false;
     this.selectedImageUrl = null;
   }
 
   private mostrarUbicaciones(ubicaciones: Ubicacion[]): void {
-    Object.values(this.layerGroups).forEach((group) =>
-      group.forEach((marker) => marker.setMap(null))
-    );
+    this.layerGroups = { critico: [], alto: [], medio: [], bajo: [] };
+    this.markers.forEach(marker => marker.setMap(null));
     this.markers = [];
-    this.layerGroups = { alta: [], normal: [], baja: [] };
 
     const ubicacionesFiltradas = ubicaciones.filter((reporte) => {
       const cumpleEstado = !this.filtroEstado || reporte.estado === this.filtroEstado;
-      const cumpleUrgencia = !this.filtroUrgencia || reporte.urgencia === this.filtroUrgencia;
+      const cumpleUrgencia = !this.filtroUrgencia || 
+        this.normalizarUrgencia(reporte.urgencia) === this.filtroUrgencia.toLowerCase();
       const cumpleCategoria = !this.filtroCategoria || reporte.categoria === this.filtroCategoria;
       const cumpleBusqueda =
         !this.filtroBusqueda ||
@@ -282,7 +287,9 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
     });
 
     ubicacionesFiltradas.forEach((reporte) => {
-      const color = this.getColorUrgencia(reporte.urgencia);
+      const urgenciaNormalizada = this.normalizarUrgencia(reporte.urgencia);
+      const color = this.getColorUrgencia(urgenciaNormalizada);
+      
       const marker = new google.maps.Marker({
         position: { lat: reporte.ubicacion.lat, lng: reporte.ubicacion.lng },
         map: this.map,
@@ -297,7 +304,6 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
         title: `ID: ${reporte.id}`,
       });
 
-      // Construir el contenido del InfoWindow
       let infoWindowContent = `
         <div class="p-2">
           <p class="font-bold">ID: ${reporte.id}</p>
@@ -307,7 +313,6 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
           <p class="text-sm">Descripción: ${reporte.ubicacion.descripcion}</p>
       `;
 
-      // Agregar la imagen si existe
       if (reporte.imagen) {
         infoWindowContent += `
           <div class="mt-2">
@@ -326,7 +331,7 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
         infoWindow.open(this.map, marker);
       });
 
-      this.layerGroups[reporte.urgencia.toLowerCase()].push(marker);
+      this.layerGroups[urgenciaNormalizada].push(marker);
       this.markers.push(marker);
     });
 
@@ -346,21 +351,17 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
     this.reportesService.getUbicaciones().subscribe({
       next: (response: any) => {
         if (response.status === 'success') {
-          // Agregar la URL base a las imágenes
           this.datosReportes = response.data.map((reporte: any) => ({
             ...reporte,
-            imagen: `${environment.urlApiImages}${reporte.imagen}`
+            imagen: reporte.imagen ? `${environment.urlApiImages}${reporte.imagen}` : undefined
           }));
-
-          console.log('Datos de reportes:', this.datosReportes);
           this.actualizarCategorias(this.datosReportes);
           this.mostrarUbicaciones(this.datosReportes);
         }
       },
       error: (error) => console.error('Error cargando ubicaciones:', error),
     });
-}
-
+  }
 
   private checkScreenSize() {
     this.isMobile = window.innerWidth < 768;
@@ -390,7 +391,6 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnDestroy() {
     window.removeEventListener('resize', () => this.checkScreenSize());
-    // Limpiar la función global
     delete (window as any).openImageModal;
   }
 }

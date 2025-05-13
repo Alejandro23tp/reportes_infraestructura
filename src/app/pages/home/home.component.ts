@@ -20,7 +20,14 @@ import { SkeletonLoaderComponent } from '../../components/skeleton-loader/skelet
 })
 export default class HomeComponent implements OnInit {
   listReports: any[] = [];
-  nuevoReporte: any = { descripcion: '', ubicacion: '', imagen: null, estado: 'pendiente', urgencia: 'normal', categoria_id: '' };
+  nuevoReporte: any = { 
+    descripcion: '', 
+    ubicacion: '', 
+    imagen: null, 
+    estado: 'pendiente', 
+    urgencia: 'normal', 
+    categoria_id: '' 
+  };
   categorias: any[] = [];  // Almacena las categorías
   errorMessage: string = '';  // Variable para almacenar el mensaje de error
   mostrarFormulario = false;
@@ -54,6 +61,8 @@ export default class HomeComponent implements OnInit {
   imagesLoading = new Map<number, boolean>();
   private currentImageIndex = 0;
   private batchSize = 5;
+  // En las propiedades del componente
+confianzaCategoria: number = 0;
 
   constructor(
     private srvReports: ReportesService,
@@ -239,74 +248,107 @@ export default class HomeComponent implements OnInit {
     }
   }
 
-  async getCategorias() {
-    try {
-      const res: any = await firstValueFrom(this.srvCategorias.getCategorias());
-      this.categorias = res.data;
-    } catch (error) {
-      console.error('Error al obtener las categorías:', error);
+
+    onFileChange(event: any) {
+      this.nuevoReporte.imagen = event.target.files[0];
     }
-  }
 
-  onFileChange(event: any) {
-    this.nuevoReporte.imagen = event.target.files[0];
-  }
-
-  // Método mejorado para manejar cambios de imagen
   async onImageChange(event: any): Promise<void> {
-    const file = event?.target?.files?.[0];
-    
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      this.errorMessage = 'Por favor, selecciona un archivo de imagen válido.';
-      this.nuevoReporte.imagen = null;
-      this.imagenPreview = null;
-      return;
-    }
-
-    // Crear preview de la imagen
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      this.imagenPreview = e.target?.result as string;
-    };
-    reader.readAsDataURL(file);
-    
-    this.analizandoImagen = true; // Iniciar análisis
-    this.categoriaSugerida = null; // Resetear categoría sugerida
-    
-    try {
-      const response = await firstValueFrom(this.srvReports.analizarImagen(file));
-      console.log('Respuesta de análisis de imagen:', response);
+      const file = event?.target?.files?.[0];
       
-      if (!response.success) {
-        if (response.error_tipo === 'imagen_no_relevante') {
-          this.errorMessage = 'La imagen debe mostrar daños en infraestructura urbana (calles, edificios, servicios públicos, etc).';
+      if (!file) return;
+
+      if (!file.type.startsWith('image/')) {
+          this.errorMessage = 'Por favor, selecciona un archivo de imagen válido.';
           this.nuevoReporte.imagen = null;
           this.imagenPreview = null;
-          // Limpiar input de imagen
-          event.target.value = '';
           return;
-        }
       }
 
-      // Continuar con el proceso si la imagen es válida
+      // Set the image immediately to prevent validation errors
       this.nuevoReporte.imagen = file;
-      this.errorMessage = '';
       
-      if (response.success && response.categoria_sugerida) {
-        this.categoriaSugerida = response.categoria_sugerida;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+          this.imagenPreview = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+      
+      this.analizandoImagen = true;
+      this.categoriaSugerida = null;
+      this.confianzaCategoria = 0;
+
+      try {
+          const response = await firstValueFrom(this.srvReports.analizarImagen(file));
+          
+          if (!response.success && response.error_tipo === 'imagen_no_relevante') {
+              this.errorMessage = 'La imagen debe mostrar daños en infraestructura urbana (calles, edificios, servicios públicos, etc).';
+              this.nuevoReporte.imagen = null;
+              this.imagenPreview = null;
+              event.target.value = '';
+              return;
+          }
+
+          if (response.success && response.categoria_sugerida) {
+              this.categoriaSugerida = response.categoria_sugerida;
+              this.confianzaCategoria = response.confianza;
+
+              // Actualizar lista de categorías
+              await this.getCategorias(true);
+              
+              let categoriaEncontrada = this.categorias.find(
+                  c => c.nombre.toLowerCase() === this.categoriaSugerida.toLowerCase()
+              );
+
+              if (!categoriaEncontrada) {
+                  // Crear categoría si no existe
+                  await this.crearNuevaCategoria(this.categoriaSugerida);
+                  await this.getCategorias(true); // Recargar categorías
+                  categoriaEncontrada = this.categorias.find(
+                      c => c.nombre.toLowerCase() === this.categoriaSugerida.toLowerCase()
+                  );
+              }
+
+              if (categoriaEncontrada) {
+                  this.nuevoReporte.categoria_id = categoriaEncontrada.id;
+              } else {
+                  this.errorMessage = 'Error al crear la categoría sugerida';
+              }
+          }
+
+      } catch (error) {
+          console.error('Error al analizar la imagen:', error);
+          this.errorMessage = 'Error al procesar la imagen. Por favor, intenta con otra imagen.';
+      } finally {
+          this.analizandoImagen = false;
+          if (this.nuevoReporte.imagen) this.nuevoReporte.imagen = file;
       }
-    } catch (error) {
-      console.error('Error al analizar la imagen:', error);
-      this.errorMessage = 'Error al procesar la imagen. Por favor, intenta con otra imagen.';
-      this.nuevoReporte.imagen = null;
-      this.imagenPreview = null;
-      event.target.value = '';
-    } finally {
-      this.analizandoImagen = false; // Finalizar análisis
-    }
   }
+
+  async crearNuevaCategoria(nombre: string) {
+    try {
+        await firstValueFrom(
+            this.srvCategorias.crearCategoria({
+                nombre: nombre,
+                descripcion: 'Creada automáticamente',
+                es_autogenerada: true
+            })
+        );
+    } catch (error) {
+        console.error('Error creando categoría:', error);
+    }
+}
+
+async getCategorias(forzarRecarga: boolean = false) {
+    if (forzarRecarga || this.categorias.length === 0) {
+        try {
+            const res: any = await firstValueFrom(this.srvCategorias.getCategorias());
+            this.categorias = res.data;
+        } catch (error) {
+            console.error('Error al obtener categorías:', error);
+        }
+    }
+}
 
   // Obtiene la ubicación actual
   getGeolocalizacion() {
@@ -353,32 +395,46 @@ export default class HomeComponent implements OnInit {
     }
   }
 
-  // Método mejorado para crear reporte
-  async crearReporte() {
-    if (!this.validarFormulario()) return;
+async crearReporte() {
+    console.log('Iniciando creación de reporte...'); // Debug log
+    
+    if (!this.validarFormulario()) {
+        console.log('No pasó la validación');
+        return;
+    }
     
     this.submitting = true;
     this.errorMessage = '';
     
     const formData = new FormData();
     
+    // Debug logs para ver los datos
+    console.log('Usuario ID:', this.userId);
+    console.log('Imagen:', this.nuevoReporte.imagen);
+    console.log('Descripción:', this.nuevoReporte.descripcion);
+    console.log('Ubicación:', this.nuevoReporte.ubicacion);
+    console.log('Categoría:', this.nuevoReporte.categoria_id);
+
+    // Agregar campos directamente sin transformaciones
     formData.append('usuario_id', this.userId);
     formData.append('imagen', this.nuevoReporte.imagen);
     formData.append('descripcion', this.nuevoReporte.descripcion);
     formData.append('ubicacion', this.nuevoReporte.ubicacion);
     formData.append('estado', this.nuevoReporte.estado);
-    formData.append('urgencia', this.nuevoReporte.urgencia);
     
     if (this.nuevoReporte.categoria_id) {
       formData.append('categoria_id', this.nuevoReporte.categoria_id);
     }
 
     try {
+      console.log('Creando reporte con los siguientes datos:');
       const response = await firstValueFrom(this.srvReports.crearReporte(formData));
       this.resetForm();
-      await this.getInitialReports(); // Cambiamos getReports por getInitialReports
+      await this.getInitialReports();
       
-      // Forzar la carga de datos e imagen del nuevo reporte
+      // Cierre del modal
+      this.toggleFormulario(false); // 👈 Aquí está el cambio importante
+
       if (response.data && response.data.id) {
         this.precargarImagen({
           id: response.data.id,
@@ -387,7 +443,6 @@ export default class HomeComponent implements OnInit {
         await this.cargarDatosReporteAsync(response.data.id);
       }
       
-      this.toggleFormulario();
     } catch (error: any) {
       this.errorMessage = error.message || 'Error al crear el reporte. Inténtalo de nuevo.';
       console.error('Error al crear reporte:', error);
@@ -397,26 +452,34 @@ export default class HomeComponent implements OnInit {
   }
 
   private validarFormulario(): boolean {
-    if (!this.nuevoReporte.descripcion.trim()) {
-      this.errorMessage = 'La descripción es requerida';
-      return false;
+    console.log('Validando formulario...', this.nuevoReporte); // Debug log
+
+    if (!this.nuevoReporte.descripcion?.trim()) {
+        console.log('Error: descripción vacía');
+        this.errorMessage = 'La descripción es requerida';
+        return false;
     }
     if (!this.nuevoReporte.ubicacion) {
-      this.errorMessage = 'La ubicación es requerida';
-      return false;
+        console.log('Error: ubicación vacía');
+        this.errorMessage = 'La ubicación es requerida';
+        return false;
     }
     if (!this.nuevoReporte.imagen) {
-      this.errorMessage = 'La imagen es requerida';
-      return false;
+        console.log('Error: imagen vacía');
+        this.errorMessage = 'La imagen es requerida';
+        return false;
     }
     if (this.analizandoImagen) {
-      this.errorMessage = 'Espere a que se complete el análisis de la imagen';
-      return false;
+        console.log('Error: análisis de imagen en proceso');
+        this.errorMessage = 'Espere a que se complete el análisis de la imagen';
+        return false;
     }
     if (!this.categoriaSugerida) {
-      this.errorMessage = 'Espere la sugerencia de categoría';
-      return false;
+        console.log('Error: no hay categoría sugerida');
+        this.errorMessage = 'Espere la sugerencia de categoría';
+        return false;
     }
+    console.log('Validación exitosa');
     return true;
   }
 
@@ -425,7 +488,9 @@ export default class HomeComponent implements OnInit {
       categoria_id: '',
       descripcion: '',
       ubicacion: null,
-      // ... other initial properties
+      imagen: null,
+      estado: 'pendiente',
+      urgencia: 'normal'
     };
     this.imagenPreview = null;
     this.categoriaSugerida = null;

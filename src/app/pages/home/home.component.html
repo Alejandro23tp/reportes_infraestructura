@@ -43,22 +43,27 @@
                   </div>
 
                   <div class="space-y-4">
-                    <!-- Mantener el mismo contenido del formulario original -->
-                    <select 
-                      [(ngModel)]="nuevoReporte.categoria_id" 
-                      name="categoria_id" 
-                      class="w-full rounded-lg border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500">
-                      <option value="" disabled>Selecciona una categoría (opcional)</option>
-                      <option *ngFor="let categoria of categorias" 
-                              [value]="categoria.id"
-                              [selected]="categoria.nombre.toLowerCase() === categoriaSugerida?.toLowerCase()">
+                    <!-- Mantener el mismo contenido del formulario original CAMBIANDO -->
+                   <select 
+                    [(ngModel)]="nuevoReporte.categoria_id" 
+                    name="categoria_id"
+                    class="w-full rounded-lg border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500">
+                    <option value="" disabled>Selecciona una categoría</option>
+                    <option *ngFor="let categoria of categorias" 
+                            [value]="categoria.id"
+                            [ngClass]="{'text-purple-500 dark:text-purple-400': categoria.es_autogenerada}"
+                            [selected]="categoria.nombre === categoriaSugerida">
                         {{ categoria.nombre }}
-                        <span *ngIf="categoria.nombre.toLowerCase() === categoriaSugerida?.toLowerCase()" 
+                        <span *ngIf="categoria.nombre === categoriaSugerida" 
                               class="text-green-500 dark:text-green-400">
-                          (Sugerida)
+                            (Sugerida)
                         </span>
-                      </option>
-                    </select>
+                        <span *ngIf="categoria.es_autogenerada" 
+                              class="text-xs text-purple-500 dark:text-purple-400 ml-2">
+                            (Auto-generada)
+                        </span>
+                    </option>
+                </select>
                     <!-- Estado del análisis de imagen -->
                     <div *ngIf="analizandoImagen" 
                          class="text-sm text-blue-600 dark:text-blue-400 mt-1">
