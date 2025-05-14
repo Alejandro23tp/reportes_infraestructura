@@ -10,35 +10,37 @@ import { environment } from '../../../environments/environment.development';
 import { InteraccionesService } from '../../services/interacciones.service';
 import { Comentario } from '../../interfaces/interacciones.interface';
 import { SkeletonLoaderComponent } from '../../components/skeleton-loader/skeleton-loader.component';
+import { ReporteFormModalComponent } from '../../components/reportes/reporte-form-modal/reporte-form-modal.component';
+import { AdminPanelComponent } from '../../components/admin/admin-panel/admin-panel.component';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, FormsModule, SkeletonLoaderComponent],
+  imports: [
+    CommonModule, 
+    FormsModule, 
+    SkeletonLoaderComponent,
+    ReporteFormModalComponent,
+    AdminPanelComponent
+  ],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',
 })
 export default class HomeComponent implements OnInit {
   listReports: any[] = [];
-  nuevoReporte: any = { 
-    descripcion: '', 
-    ubicacion: '', 
-    imagen: null, 
-    estado: 'pendiente', 
-    urgencia: 'normal', 
-    categoria_id: '' 
-  };
-  categorias: any[] = [];  // Almacena las categorías
+
+
   errorMessage: string = '';  // Variable para almacenar el mensaje de error
   mostrarFormulario = false;
-  imagenPreview: string | null = null;
-  submitting = false;
-  geoLocationMessage: string = '';
-  geoLocationSuccess: boolean = false;
+
+
+
+
   userName: string = '';
   userId: string = '';
-  categoriaSugerida: any = null;
-  analizandoImagen: boolean = false; // Nueva propiedad para controlar el estado del análisis
+  isAdmin: boolean = false;
+ 
+  
   comentariosPorReporte: { [key: number]: string } = {}; // Para el input de comentarios
   comentariosLista: { [key: number]: Comentario[] } = {}; // Para la lista de comentarios
   reaccionesPorReporte: { [key: number]: Reaccion[] } = {};
@@ -61,8 +63,8 @@ export default class HomeComponent implements OnInit {
   imagesLoading = new Map<number, boolean>();
   private currentImageIndex = 0;
   private batchSize = 5;
-  // En las propiedades del componente
-confianzaCategoria: number = 0;
+
+  selectedImage: string | null = null; // Add this property
 
   constructor(
     private srvReports: ReportesService,
@@ -73,11 +75,12 @@ confianzaCategoria: number = 0;
 
   async ngOnInit() {
     await this.getInitialReports();
-    await this.getCategorias();
+    //await this.getCategorias();
     this.authService.getUser().subscribe(user => {
       if (user) {
         this.userName = user.nombre || '';
         this.userId = user.sub || '';
+        this.isAdmin = user.rol === 'admin'; // Assuming the role is returned from your auth service
         // Cargar todos los datos iniciales
         this.cargarDatosIniciales();
       }
@@ -249,262 +252,8 @@ confianzaCategoria: number = 0;
   }
 
 
-    onFileChange(event: any) {
-      this.nuevoReporte.imagen = event.target.files[0];
-    }
 
-  async onImageChange(event: any): Promise<void> {
-      const file = event?.target?.files?.[0];
-      
-      if (!file) return;
 
-      if (!file.type.startsWith('image/')) {
-          this.errorMessage = 'Por favor, selecciona un archivo de imagen válido.';
-          this.nuevoReporte.imagen = null;
-          this.imagenPreview = null;
-          return;
-      }
-
-      // Set the image immediately to prevent validation errors
-      this.nuevoReporte.imagen = file;
-      
-      const reader = new FileReader();
-      reader.onload = (e) => {
-          this.imagenPreview = e.target?.result as string;
-      };
-      reader.readAsDataURL(file);
-      
-      this.analizandoImagen = true;
-      this.categoriaSugerida = null;
-      this.confianzaCategoria = 0;
-
-      try {
-          const response = await firstValueFrom(this.srvReports.analizarImagen(file));
-          
-          if (!response.success && response.error_tipo === 'imagen_no_relevante') {
-              this.errorMessage = 'La imagen debe mostrar daños en infraestructura urbana (calles, edificios, servicios públicos, etc).';
-              this.nuevoReporte.imagen = null;
-              this.imagenPreview = null;
-              event.target.value = '';
-              return;
-          }
-
-          if (response.success && response.categoria_sugerida) {
-              this.categoriaSugerida = response.categoria_sugerida;
-              this.confianzaCategoria = response.confianza;
-
-              // Actualizar lista de categorías
-              await this.getCategorias(true);
-              
-              let categoriaEncontrada = this.categorias.find(
-                  c => c.nombre.toLowerCase() === this.categoriaSugerida.toLowerCase()
-              );
-
-              if (!categoriaEncontrada) {
-                  // Crear categoría si no existe
-                  await this.crearNuevaCategoria(this.categoriaSugerida);
-                  await this.getCategorias(true); // Recargar categorías
-                  categoriaEncontrada = this.categorias.find(
-                      c => c.nombre.toLowerCase() === this.categoriaSugerida.toLowerCase()
-                  );
-              }
-
-              if (categoriaEncontrada) {
-                  this.nuevoReporte.categoria_id = categoriaEncontrada.id;
-              } else {
-                  this.errorMessage = 'Error al crear la categoría sugerida';
-              }
-          }
-
-      } catch (error) {
-          console.error('Error al analizar la imagen:', error);
-          this.errorMessage = 'Error al procesar la imagen. Por favor, intenta con otra imagen.';
-      } finally {
-          this.analizandoImagen = false;
-          if (this.nuevoReporte.imagen) this.nuevoReporte.imagen = file;
-      }
-  }
-
-  async crearNuevaCategoria(nombre: string) {
-    try {
-        await firstValueFrom(
-            this.srvCategorias.crearCategoria({
-                nombre: nombre,
-                descripcion: 'Creada automáticamente',
-                es_autogenerada: true
-            })
-        );
-    } catch (error) {
-        console.error('Error creando categoría:', error);
-    }
-}
-
-async getCategorias(forzarRecarga: boolean = false) {
-    if (forzarRecarga || this.categorias.length === 0) {
-        try {
-            const res: any = await firstValueFrom(this.srvCategorias.getCategorias());
-            this.categorias = res.data;
-        } catch (error) {
-            console.error('Error al obtener categorías:', error);
-        }
-    }
-}
-
-  // Obtiene la ubicación actual
-  getGeolocalizacion() {
-    if (navigator.geolocation) {
-      this.geoLocationMessage = 'Obteniendo ubicación...';
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const lat = position.coords.latitude;
-          const lon = position.coords.longitude;
-          const precision = position.coords.accuracy; // 👈 Radio de error en metros
-          //console.log(`Precisión: ${precision} metros`);
-          this.nuevoReporte.ubicacion = JSON.stringify({ lat, lon });
-          this.geoLocationSuccess = true;
-          this.geoLocationMessage = 'Ubicación obtenida correctamente';
-          setTimeout(() => {
-            this.geoLocationMessage = '';
-          }, 3000);
-        },
-        (error) => {
-          this.geoLocationSuccess = false;
-          switch(error.code) {
-            case error.PERMISSION_DENIED:
-              this.geoLocationMessage = 'Permiso de ubicación denegado';
-              break;
-            case error.POSITION_UNAVAILABLE:
-              this.geoLocationMessage = 'Información de ubicación no disponible';
-              break;
-            case error.TIMEOUT:
-              this.geoLocationMessage = 'Tiempo de espera agotado';
-              break;
-            default:
-              this.geoLocationMessage = 'Error al obtener la ubicación';
-          }
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0
-        }
-      );
-    } else {
-      this.geoLocationMessage = 'La geolocalización no es compatible con este navegador';
-      this.geoLocationSuccess = false;
-    }
-  }
-
-async crearReporte() {
-    console.log('Iniciando creación de reporte...'); // Debug log
-    
-    if (!this.validarFormulario()) {
-        console.log('No pasó la validación');
-        return;
-    }
-    
-    this.submitting = true;
-    this.errorMessage = '';
-    
-    const formData = new FormData();
-    
-    // Debug logs para ver los datos
-    console.log('Usuario ID:', this.userId);
-    console.log('Imagen:', this.nuevoReporte.imagen);
-    console.log('Descripción:', this.nuevoReporte.descripcion);
-    console.log('Ubicación:', this.nuevoReporte.ubicacion);
-    console.log('Categoría:', this.nuevoReporte.categoria_id);
-
-    // Agregar campos directamente sin transformaciones
-    formData.append('usuario_id', this.userId);
-    formData.append('imagen', this.nuevoReporte.imagen);
-    formData.append('descripcion', this.nuevoReporte.descripcion);
-    formData.append('ubicacion', this.nuevoReporte.ubicacion);
-    formData.append('estado', this.nuevoReporte.estado);
-    
-    if (this.nuevoReporte.categoria_id) {
-      formData.append('categoria_id', this.nuevoReporte.categoria_id);
-    }
-
-    try {
-      console.log('Creando reporte con los siguientes datos:');
-      const response = await firstValueFrom(this.srvReports.crearReporte(formData));
-      this.resetForm();
-      await this.getInitialReports();
-      
-      // Cierre del modal
-      this.toggleFormulario(false); // 👈 Aquí está el cambio importante
-
-      if (response.data && response.data.id) {
-        this.precargarImagen({
-          id: response.data.id,
-          imagen_url: `${environment.urlApiImages}${response.data.imagen_url}`
-        });
-        await this.cargarDatosReporteAsync(response.data.id);
-      }
-      
-    } catch (error: any) {
-      this.errorMessage = error.message || 'Error al crear el reporte. Inténtalo de nuevo.';
-      console.error('Error al crear reporte:', error);
-    } finally {
-      this.submitting = false;
-    }
-  }
-
-  private validarFormulario(): boolean {
-    console.log('Validando formulario...', this.nuevoReporte); // Debug log
-
-    if (!this.nuevoReporte.descripcion?.trim()) {
-        console.log('Error: descripción vacía');
-        this.errorMessage = 'La descripción es requerida';
-        return false;
-    }
-    if (!this.nuevoReporte.ubicacion) {
-        console.log('Error: ubicación vacía');
-        this.errorMessage = 'La ubicación es requerida';
-        return false;
-    }
-    if (!this.nuevoReporte.imagen) {
-        console.log('Error: imagen vacía');
-        this.errorMessage = 'La imagen es requerida';
-        return false;
-    }
-    if (this.analizandoImagen) {
-        console.log('Error: análisis de imagen en proceso');
-        this.errorMessage = 'Espere a que se complete el análisis de la imagen';
-        return false;
-    }
-    if (!this.categoriaSugerida) {
-        console.log('Error: no hay categoría sugerida');
-        this.errorMessage = 'Espere la sugerencia de categoría';
-        return false;
-    }
-    console.log('Validación exitosa');
-    return true;
-  }
-
-  public resetForm() {
-    this.nuevoReporte = {
-      categoria_id: '',
-      descripcion: '',
-      ubicacion: null,
-      imagen: null,
-      estado: 'pendiente',
-      urgencia: 'normal'
-    };
-    this.imagenPreview = null;
-    this.categoriaSugerida = null;
-    this.geoLocationMessage = '';
-    this.geoLocationSuccess = false;
-    this.errorMessage = '';
-  }
-
-  public toggleFormulario(show: boolean = false) {
-    this.mostrarFormulario = show;
-    if (!show) {
-      this.resetForm();
-    }
-  }
 
   onLogout() {
     this.authService.logout();
@@ -731,5 +480,21 @@ async crearReporte() {
     } else {
       this.comentariosPorReporte[reporteId] = valor;
     }
+  }
+
+  toggleFormulario(show: boolean = false) {
+    this.mostrarFormulario = show;
+  }
+
+  handleReporteCreado(reporte: any) {
+    this.getInitialReports();
+  }
+
+  openImageViewer(imageUrl: string) { // Add this method
+    this.selectedImage = imageUrl;
+  }
+
+  closeImageViewer() { // Add this method
+    this.selectedImage = null;
   }
 }

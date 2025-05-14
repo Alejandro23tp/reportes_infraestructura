@@ -1,162 +1,31 @@
-<div class="min-h-screen bg-gray-100 dark:bg-gray-900">
+<div class="min-h-screen bg-gray-100 dark:bg-gray-fondo">
   <div class="container mx-auto px-4 py-8">
     <!-- Layout principal -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <!-- Feed principal -->
       <div class="lg:col-span-2">
         <!-- Botón para crear reporte -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
+        <div class="bg-white dark:bg-gray-850 rounded-xl shadow-lg p-6 mb-8">
           <div class="flex items-center space-x-4">
-            <div class="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700"></div>
+            <div class="w-12 h-12 rounded-full bg-gray-200 dark:bg-white"></div>
             <button 
               (click)="toggleFormulario(true)" 
-              class="flex-1 text-left px-4 py-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600/50">
+              class="flex-1 text-left px-4 py-3 bg-gray-50 dark:bg-gray-escritura rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-hover">
               ¿Qué quieres reportar hoy?
             </button>
           </div>
         </div>
 
         <!-- Modal del formulario -->
-        <div *ngIf="mostrarFormulario" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-          <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <!-- Overlay de fondo -->
-            <div class="fixed inset-0 bg-gray-800 bg-opacity-75 transition-opacity" (click)="toggleFormulario()"></div>
-
-            <!-- Modal -->
-            <div class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full mx-4 sm:mx-auto">
-              <div class="px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                <!-- Encabezado del modal -->
-                <div class="flex justify-between items-center mb-4">
-                  <h3 class="text-lg font-medium text-gray-900 dark:text-white">Crear nuevo reporte</h3>
-                  <button 
-                    type="button" 
-                    class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
-                    (click)="toggleFormulario()">
-                    ✕
-                  </button>
-                </div>
-
-                <!-- Formulario -->
-                <form (ngSubmit)="crearReporte(); resetForm()" #reporteForm="ngForm" class="space-y-6">
-                  <div *ngIf="errorMessage" class="bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 p-4">
-                    <p class="text-red-700 dark:text-red-400">{{ errorMessage }}</p>
-                  </div>
-
-                  <div class="space-y-4">
-                    <!-- Mantener el mismo contenido del formulario original CAMBIANDO -->
-                   <select 
-                    [(ngModel)]="nuevoReporte.categoria_id" 
-                    name="categoria_id"
-                    class="w-full rounded-lg border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500">
-                    <option value="" disabled>Selecciona una categoría</option>
-                    <option *ngFor="let categoria of categorias" 
-                            [value]="categoria.id"
-                            [ngClass]="{'text-purple-500 dark:text-purple-400': categoria.es_autogenerada}"
-                            [selected]="categoria.nombre === categoriaSugerida">
-                        {{ categoria.nombre }}
-                        <span *ngIf="categoria.nombre === categoriaSugerida" 
-                              class="text-green-500 dark:text-green-400">
-                            (Sugerida)
-                        </span>
-                        <span *ngIf="categoria.es_autogenerada" 
-                              class="text-xs text-purple-500 dark:text-purple-400 ml-2">
-                            (Auto-generada)
-                        </span>
-                    </option>
-                </select>
-                    <!-- Estado del análisis de imagen -->
-                    <div *ngIf="analizandoImagen" 
-                         class="text-sm text-blue-600 dark:text-blue-400 mt-1">
-                      Analizando imagen...
-                    </div>
-                    <!-- Mensaje de categoría sugerida -->
-                    <div *ngIf="categoriaSugerida" 
-                         class="text-sm text-green-600 dark:text-green-400 mt-1">
-                      Categoría sugerida basada en el análisis de la imagen: {{ categoriaSugerida }}
-                    </div>
-
-                    <div class="flex flex-col gap-2">
-                      <div class="flex gap-2">
-                        <input 
-                          type="text" 
-                          [value]="nuevoReporte.ubicacion ? 'Ubicación capturada ✓' : 'Ubicación no capturada'"
-                          class="flex-1 rounded-lg border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white" 
-                          readonly 
-                          [ngClass]="{'bg-green-50 dark:bg-green-900/30': geoLocationSuccess}">
-                        <button 
-                          type="button" 
-                          (click)="getGeolocalizacion()" 
-                          class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-all">
-                          <svg class="w-6 h-6 text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
-                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.8 13.938h-.011a7 7 0 1 0-11.464.144h-.016l.14.171c.1.127.2.251.3.371L12 21l5.13-6.248c.194-.209.374-.429.54-.659l.13-.155Z"/>
-                          </svg>
-                        </button>
-                      </div>
-                      <div *ngIf="geoLocationMessage" 
-                           [ngClass]="{
-                             'text-green-600 dark:text-green-400': geoLocationSuccess,
-                             'text-red-600 dark:text-red-400': !geoLocationSuccess
-                           }" 
-                           class="text-sm">
-                        {{ geoLocationMessage }}
-                      </div>
-                    </div>
-
-                    <textarea 
-                      [(ngModel)]="nuevoReporte.descripcion" 
-                      name="descripcion" 
-                      class="w-full rounded-lg border-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:text-white" 
-                      rows="3" 
-                      placeholder="Describe el problema..."
-                      required>
-                    </textarea>
-
-                    <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 hover:border-blue-500 transition-colors">
-                      <input 
-                        type="file" 
-                        (change)="onImageChange($event)" 
-                        class="hidden" 
-                        id="imagen"
-                        accept="image/*"
-                        required>
-                      <label for="imagen" class="flex flex-col items-center justify-center cursor-pointer">
-                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        <span class="mt-2 text-sm text-gray-500 dark:text-gray-400">Añadir imagen</span>
-                      </label>
-                    </div>
-
-                    <div *ngIf="imagenPreview" class="mt-4">
-                      <img [src]="imagenPreview" alt="Vista previa" class="max-h-48 rounded-lg mx-auto">
-                    </div>
-                  </div>
-
-                  <!-- Botones del modal -->
-                  <div class="flex justify-end gap-3">
-                    <button 
-                      type="button"
-                      (click)="toggleFormulario(false)"
-                      class="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-all">
-                      Cancelar
-                    </button>
-                    <button 
-                      type="submit" 
-                      [disabled]="!reporteForm.valid || submitting || analizandoImagen || !categoriaSugerida" 
-                      class="px-6 py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white font-medium rounded-lg transition-all">
-                      {{ submitting ? 'Enviando...' : (analizandoImagen ? 'Analizando...' : 'Publicar') }}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        </div>
+        <app-reporte-form-modal
+          *ngIf="mostrarFormulario"
+          (reporteCreado)="handleReporteCreado($event)"
+          (cerrarModal)="toggleFormulario(false)">
+        </app-reporte-form-modal>
 
         <!-- Lista de reportes -->
         <div class="space-y-6">
-          <div *ngFor="let reporte of listReports" class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+          <div *ngFor="let reporte of listReports" class="bg-white dark:bg-gray-850 rounded-xl shadow-lg overflow-hidden">
             <!-- Cabecera del reporte -->
             <div class="p-6">
               <div class="flex items-center justify-between mb-4">
@@ -192,18 +61,21 @@
             </div>
 
             <!-- Modificar solo la sección de imagen del reporte -->
-            <div class="relative">
+            <div class="relative aspect-square w-full"> <!-- Changed to aspect-square -->
               <ng-container *ngIf="!isImageLoading(reporte.id); else loadingImage">
                 <img 
                   [src]="reporte.imagen_url" 
                   alt="Imagen del reporte" 
-                  class="w-full h-auto"
+                  class="w-full h-full object-cover object-center" 
                   loading="lazy"
+                  (click)="openImageViewer(reporte.imagen_url)"
                   (load)="imagesLoading.set(reporte.id, false)"
                   (error)="imagesLoading.set(reporte.id, false)">
               </ng-container>
               <ng-template #loadingImage>
-                <app-skeleton-loader height="300px"></app-skeleton-loader>
+                <div class="w-full h-full">
+                  <app-skeleton-loader class="h-full"></app-skeleton-loader>
+                </div>
               </ng-template>
             </div>
 
@@ -214,6 +86,7 @@
                 <ng-container *ngIf="!reaccionesLoading[reporte.id]; else loadingReacciones">
                   <div class="flex items-center gap-4 mb-4">
                     <div class="flex items-center gap-4">
+                      <!-- Like (Pulgar arriba) -->
                       <button 
                         (click)="toggleReaccion(reporte.id, 1)"
                         [class.bg-blue-100]="haReaccionado(reporte.id, 1)"
@@ -221,57 +94,59 @@
                         [class.dark:text-blue-400]="haReaccionado(reporte.id, 1)"
                         class="group px-3 py-1 text-sm rounded-full flex items-center space-x-2 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors text-gray-500 dark:text-gray-400">
                         <div class="rounded-full p-1 transition-all">
-                          <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" class="fill-current">
-                            <path d="M720-120H280v-520l280-280 50 50q7 7 11.5 19t4.5 23v14l-44 174h258q32 0 56 24t24 56v80q0 7-2 15t-4 15L794-168q-9 20-30 34t-44 14Zm-360-80h360l120-280v-80H480l54-220-174 174v406Zm0-406v406-406Zm-80-34v80H160v360h120v80H80v-520h200Z"/>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M7 10v12"/>
+                            <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/>
                           </svg>
                         </div>
                         <span>{{ getReaccionesPorTipo(reporte.id, 1) }}</span>
                       </button>
 
-                      <!-- Reacción Tipo 2 (Corazón/Rojo) -->
+                      <!-- Me encanta (Corazón) -->
                       <button 
-                      (click)="toggleReaccion(reporte.id, 2)"
-                      [class.bg-red-100]="haReaccionado(reporte.id, 2)"
-                      [class.text-red-600]="haReaccionado(reporte.id, 2)"
-                      [class.dark:text-red-400]="haReaccionado(reporte.id, 2)"
-                      class="group px-3 py-1 text-sm rounded-full flex items-center space-x-2 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors text-gray-500 dark:text-gray-400">
-                      <div class="rounded-full p-1 transition-all">
-                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" class="fill-current">
-                          <path d="m480-120-58-52q-101-91-167-157T150-447.5Q111-500 95.5-544T80-634q0-94 63-157t157-63q52 0 99 22t81 62q34-40 81-62t99-22q94 0 157 63t63 157q0 46-15.5 90T810-447.5Q771-395 705-329T538-172l-58 52Z"/>
-                        </svg>
-                      </div>
-                      <span>{{ getReaccionesPorTipo(reporte.id, 2) }}</span>
+                        (click)="toggleReaccion(reporte.id, 2)"
+                        [class.bg-red-100]="haReaccionado(reporte.id, 2)"
+                        [class.text-red-600]="haReaccionado(reporte.id, 2)"
+                        [class.dark:text-red-400]="haReaccionado(reporte.id, 2)"
+                        class="group px-3 py-1 text-sm rounded-full flex items-center space-x-2 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors text-gray-500 dark:text-gray-400">
+                        <div class="rounded-full p-1 transition-all">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                          </svg>
+                        </div>
+                        <span>{{ getReaccionesPorTipo(reporte.id, 2) }}</span>
                       </button>
 
+                      <!-- Enojado (Alerta) -->
                       <button 
-                      (click)="toggleReaccion(reporte.id, 3)"
-                      [class.bg-yellow-100]="haReaccionado(reporte.id, 3)"
-                      [class.text-yellow-600]="haReaccionado(reporte.id, 3)"
-                      [class.dark:text-yellow-400]="haReaccionado(reporte.id, 3)"
-                      class="group px-3 py-1 text-sm rounded-full flex items-center space-x-2 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors text-gray-500 dark:text-gray-400">
-                      <div class="rounded-full p-1 transition-all">
-                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" class="fill-current">
-                          <path d="M480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q133 0 226.5-93.5T800-480q0-133-93.5-226.5T480-800q-133 0-226.5 93.5T160-480q0 133 93.5 226.5T480-160Zm60-364 20-12q2 24 19 40t41 16q25 0 42.5-17.5T680-540q0-15-7-28.5T654-590l26-15-20-35-140 80 20 36Zm-120 0 20-36-140-80-20 35 26 15q-12 8-19 21.5t-7 28.5q0 25 17.5 42.5T340-480q24 0 41-16t19-40l20 12Zm60 84q-71 0-125 45.5T279-280h402q-22-69-76-114.5T480-440Zm0-40Z"/>
-                        </svg>
-                      </div>
-                      <span>{{ getReaccionesPorTipo(reporte.id, 3) }}</span>
-                    </button>
+                        (click)="toggleReaccion(reporte.id, 3)"
+                        [class.bg-yellow-100]="haReaccionado(reporte.id, 3)"
+                        [class.text-yellow-600]="haReaccionado(reporte.id, 3)"
+                        [class.dark:text-yellow-400]="haReaccionado(reporte.id, 3)"
+                        class="group px-3 py-1 text-sm rounded-full flex items-center space-x-2 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors text-gray-500 dark:text-gray-400">
+                        <div class="rounded-full p-1 transition-all">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="12" x2="12" y1="8" y2="12"/>
+                            <line x1="12" x2="12.01" y1="16" y2="16"/>
+                          </svg>
+                        </div>
+                        <span>{{ getReaccionesPorTipo(reporte.id, 3) }}</span>
+                      </button>
                     </div>
 
                     <!-- Lista de usuarios que reaccionaron -->
-                    <div *ngFor="let reaccion of reaccionesPorReporte[reporte.id]" 
-                         class="flex items-center space-x-2">
+                    <div *ngFor="let reaccion of reaccionesPorReporte[reporte.id]" class="flex items-center space-x-2">
                       <div class="relative group" *ngIf="(reaccion.usuarios || []).length > 0">
                         <div class="text-xs text-gray-500">
                           {{ (reaccion.usuarios && reaccion.usuarios[0] && reaccion.usuarios[0].nombre) || 'Usuario' }}
-                          <span *ngIf="(reaccion.usuarios || []).length > 1">
-                            y {{ reaccion.usuarios.length - 1 }} más
-                          </span>
+                          <span *ngIf="(reaccion.usuarios || []).length > 1"> y {{ reaccion.usuarios.length - 1 }} más </span>
                         </div>
                       </div>
                     </div>
                   </div>
                 </ng-container>
+
                 <ng-template #loadingReacciones>
                   <app-skeleton-loader height="24px" width="120px"></app-skeleton-loader>
                 </ng-template>
@@ -376,29 +251,27 @@
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Sidebar derecho con estadísticas -->
-      <div class="hidden lg:block">
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 sticky top-8">
-          <h3 class="font-bold text-gray-900 dark:text-white mb-4">Estadísticas</h3>
-          <!-- Estadísticas resumen -->
-          <div class="space-y-4">
-            <div class="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-              <h4 class="text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Reportes totales</h4>
-              <p class="text-2xl font-bold text-gray-900 dark:text-white">reportestotales</p>
-            </div>
-            <div class="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-              <h4 class="text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">En proceso</h4>
-              <p class="text-2xl font-bold text-blue-600">reportesEnProceso</p>
-            </div>
-            <div class="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-              <h4 class="text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Completados</h4>
-              <p class="text-2xl font-bold text-green-600">reportesCompletados</p>
-            </div>
-          </div>
+        <!-- Add this after the reportes section and before the statistics sidebar -->
+        <div *ngIf="isAdmin" class="mt-8">
+          <app-admin-panel></app-admin-panel>
         </div>
       </div>
-    </div>
+
+
+  <!-- Image Viewer Modal -->
+  <div *ngIf="selectedImage" 
+       class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90"
+       (click)="closeImageViewer()">
+    <img [src]="selectedImage" 
+         alt="Vista ampliada" 
+         class="max-w-[90vw] max-h-[90vh] object-contain">
+    <button 
+      class="absolute top-4 right-4 text-white hover:text-gray-300"
+      (click)="closeImageViewer()">
+      <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+      </svg>
+    </button>
   </div>
 </div>
