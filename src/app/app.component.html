@@ -1,5 +1,5 @@
 <div class="flex flex-col min-h-screen">
-  <app-header />
+  <app-header *ngIf="router.url !== '/mapa'" />
   <main class="flex-grow pb-16 md:pb-0"> <!-- padding-bottom para el espacio de la navegación móvil -->
     <router-outlet />
   </main>

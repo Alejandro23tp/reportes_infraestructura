@@ -2,6 +2,7 @@ import { Component, OnInit, inject, AfterViewInit, OnDestroy } from '@angular/co
 import { environment } from '../../../environments/environment.development';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { ReportesService } from '../../services/reportes.service';
 
 interface Ubicacion {
@@ -33,11 +34,12 @@ interface UrgenciaResumen {
 @Component({
   selector: 'app-mapa',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './mapa.component.html',
   styleUrls: ['./mapa.component.scss'],
 })
 export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {  
+  isHeaderVisible = false;
   private map!: google.maps.Map;
   public markers: google.maps.Marker[] = [];
   private circles: google.maps.Circle[] = [];
@@ -67,7 +69,13 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
     total: 0,
   };
 
+  toggleHeader() {
+    this.isHeaderVisible = !this.isHeaderVisible;
+  }
+
   ngOnInit() {
+    // Hide header by default when on map page
+    this.isHeaderVisible = false;
     this.checkScreenSize();
     window.addEventListener('resize', () => this.checkScreenSize());
     this.loadGoogleMapsScript();

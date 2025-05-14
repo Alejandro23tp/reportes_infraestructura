@@ -4,6 +4,7 @@ import { RegisterComponent } from './pages/register/register.component';
 import HomeComponent from './pages/home/home.component';
 import { AuthGuard } from './guards/auth.guard';
 import { ResetPasswordComponent } from './pages/reset-password/reset-password.component';
+import { NotificacionesComponent } from './pages/notificaciones/notificaciones.component';
 
 export const routes: Routes = [
   {
@@ -27,6 +28,11 @@ export const routes: Routes = [
   {
     path: 'reset-password',
     component: ResetPasswordComponent
+  },
+  {
+    path: 'notificaciones',
+    component: NotificacionesComponent,
+    canActivate: [AuthGuard]
   },
   {
     path: '**',

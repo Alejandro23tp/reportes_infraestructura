@@ -1,17 +1,29 @@
-<div class="min-h-screen bg-gray-100 dark:bg-gray-fondo">
-  <div class="container mx-auto px-4 py-8">
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-fondo dark:to-gray-950 text-gray-800 dark:text-gray-100">
+  <div class="container mx-auto px-4 py-12 max-w-6xl">
     <!-- Layout principal -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div class="grid grid-cols-1 lg:grid-cols-1 gap-10 place-items-center">
       <!-- Feed principal -->
-      <div class="lg:col-span-2">
+      <div class="w-full max-w-xl space-y-8">
         <!-- Botón para crear reporte -->
-        <div class="bg-white dark:bg-gray-850 rounded-xl shadow-lg p-6 mb-8">
-          <div class="flex items-center space-x-4">
-            <div class="w-12 h-12 rounded-full bg-gray-200 dark:bg-white"></div>
+        <div class="bg-white dark:bg-gray-div rounded-2xl shadow-xl p-6 transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] group">
+          <div class="flex items-center space-x-6">
+            <div class="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 shadow-lg flex items-center justify-center transition-transform group-hover:rotate-6">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </div>
             <button 
               (click)="toggleFormulario(true)" 
-              class="flex-1 text-left px-4 py-3 bg-gray-50 dark:bg-gray-escritura rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-hover">
-              ¿Qué quieres reportar hoy?
+              class="flex-1 text-left px-5 py-4 bg-gray-50 dark:bg-gray-oscuro rounded-xl text-gray-700 dark:text-gray-300 
+                     hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors duration-200 
+                     focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 group">
+              <div class="flex items-center justify-between">
+                <span class="font-semibold text-lg text-gray-800 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">¿Qué quieres reportar hoy?</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-400 dark:text-gray-500 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                </svg>
+              </div>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors">Comparte un problema o sugerencia</p>
             </button>
           </div>
         </div>
@@ -24,49 +36,56 @@
         </app-reporte-form-modal>
 
         <!-- Lista de reportes -->
-        <div class="space-y-6">
-          <div *ngFor="let reporte of listReports" class="bg-white dark:bg-gray-850 rounded-xl shadow-lg overflow-hidden">
+        <div class="space-y-4">
+          <div *ngFor="let reporte of listReports" class="bg-white dark:bg-gray-div rounded-xl shadow-md border border-gray-100 dark:border-gray-div overflow-hidden transition-all duration-300 hover:shadow-lg">
             <!-- Cabecera del reporte -->
-            <div class="p-6">
+            <div class="p-4 pb-0">
               <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center space-x-3">
-                  <div class="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500"></div>
+                <div class="flex items-center space-x-4">
+                  <div class="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 shadow-sm"></div>
                   <div>
-                    <h3 class="font-semibold text-gray-900 dark:text-white">{{ reporte.usuario.name }}</h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ reporte.created_at | date:'medium' }}</p>
+                    <h3 class="font-bold text-base text-gray-900 dark:text-white tracking-tight">
+                      {{ reporte.usuario.name }}
+                      <span class="text-xs font-normal text-gray-500 dark:text-gray-400 ml-2">{{ reporte.created_at | date:'medium' }}</span>
+                    </h3>
                   </div>
                 </div>
-                <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-                  •••
+                <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 focus:outline-none rounded-full p-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="1"/>
+                    <circle cx="12" cy="5" r="1"/>
+                    <circle cx="12" cy="19" r="1"/>
+                  </svg>
                 </button>
               </div>
 
               <!-- Contenido del reporte -->
-              <p class="text-gray-700 dark:text-gray-300 mb-4">{{ reporte.descripcion }}</p>
+              <p class="text-gray-700 dark:text-gray-300 mb-4 text-base leading-relaxed">{{ reporte.descripcion }}</p>
               
               <div class="flex flex-wrap gap-2 mb-4">
-                <span class="px-3 py-1 text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 rounded-full">
+                <span class="px-3 py-1 text-xs font-medium bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300 rounded-full border border-blue-100 dark:border-blue-800">
                   {{ reporte.estado }}
                 </span>
-                <span class="px-3 py-1 text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300 rounded-full">
+                <span class="px-3 py-1 text-xs font-medium bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-300 rounded-full border border-purple-100 dark:border-purple-800">
                   {{ reporte.urgencia }}
                 </span>
-                <span class="px-3 py-1 text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300 rounded-full">
+                <span class="px-3 py-1 text-xs font-medium bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-300 rounded-full border border-amber-100 dark:border-amber-800">
                   {{ reporte.categoria?.nombre || 'Sin categoría' }}
                 </span>
-                <span class="px-3 py-1 text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 rounded-full">
+                <span class="px-3 py-1 text-xs font-medium bg-green-50 text-green-600 dark:bg-green-900/30 dark:text-green-300 rounded-full border border-green-100 dark:border-green-800">
                   📍 {{ reporte.ubicacion.lat }}, {{ reporte.ubicacion.lon }}
                 </span>
               </div>
             </div>
 
             <!-- Modificar solo la sección de imagen del reporte -->
-            <div class="relative aspect-square w-full"> <!-- Changed to aspect-square -->
+            <div class="relative w-full aspect-[4/3] group">
               <ng-container *ngIf="!isImageLoading(reporte.id); else loadingImage">
                 <img 
                   [src]="reporte.imagen_url" 
                   alt="Imagen del reporte" 
-                  class="w-full h-full object-cover object-center" 
+                  class="w-full h-full object-cover object-center rounded-b-3xl transition-all duration-300 
+                         group-hover:brightness-90 cursor-pointer" 
                   loading="lazy"
                   (click)="openImageViewer(reporte.imagen_url)"
                   (load)="imagesLoading.set(reporte.id, false)"
@@ -74,78 +93,106 @@
               </ng-container>
               <ng-template #loadingImage>
                 <div class="w-full h-full">
-                  <app-skeleton-loader class="h-full"></app-skeleton-loader>
+                  <app-skeleton-loader class="h-full rounded-b-3xl"></app-skeleton-loader>
                 </div>
               </ng-template>
             </div>
 
             <!-- Acciones del reporte -->
-            <div class="p-6 border-t border-gray-100 dark:border-gray-700">
-              <!-- Reacciones -->
+            <div class="p-6 pt-4 border-t border-gray-100 dark:border-gray-700">
+              <!-- Reacciones y Comentarios -->
               <div class="reacciones-container">
                 <ng-container *ngIf="!reaccionesLoading[reporte.id]; else loadingReacciones">
-                  <div class="flex items-center gap-4 mb-4">
+                  <div class="flex items-center justify-between mb-4">
                     <div class="flex items-center gap-4">
                       <!-- Like (Pulgar arriba) -->
-                      <button 
-                        (click)="toggleReaccion(reporte.id, 1)"
-                        [class.bg-blue-100]="haReaccionado(reporte.id, 1)"
-                        [class.text-blue-600]="haReaccionado(reporte.id, 1)"
-                        [class.dark:text-blue-400]="haReaccionado(reporte.id, 1)"
-                        class="group px-3 py-1 text-sm rounded-full flex items-center space-x-2 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors text-gray-500 dark:text-gray-400">
-                        <div class="rounded-full p-1 transition-all">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M7 10v12"/>
-                            <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/>
-                          </svg>
-                        </div>
-                        <span>{{ getReaccionesPorTipo(reporte.id, 1) }}</span>
-                      </button>
+<button 
+(click)="toggleReaccion(reporte.id, 1)"
+class="group px-1 py-1 text-xs rounded-full flex items-center space-x-2 
+       transition-colors relative
+       text-white dark:text-gray-200 hover:text-blue-500 dark:hover:text-blue-300"
+[ngClass]="{
+  'bg-blue-200/50 dark:bg-blue-900/25 text-blue-700 dark:text-blue-300': haReaccionado(reporte.id, 1)
+}">
+<div class="rounded-full p-1 transition-all">
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" 
+       class="stroke-current fill-none"
+       stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M7 10v12"/>
+    <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/>
+  </svg>
+</div>
+<span class="font-medium">{{ getReaccionesPorTipo(reporte.id, 1) }}</span>
+</button>
 
-                      <!-- Me encanta (Corazón) -->
-                      <button 
-                        (click)="toggleReaccion(reporte.id, 2)"
-                        [class.bg-red-100]="haReaccionado(reporte.id, 2)"
-                        [class.text-red-600]="haReaccionado(reporte.id, 2)"
-                        [class.dark:text-red-400]="haReaccionado(reporte.id, 2)"
-                        class="group px-3 py-1 text-sm rounded-full flex items-center space-x-2 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors text-gray-500 dark:text-gray-400">
-                        <div class="rounded-full p-1 transition-all">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
-                          </svg>
-                        </div>
-                        <span>{{ getReaccionesPorTipo(reporte.id, 2) }}</span>
-                      </button>
+<!-- Me encanta (Corazón) -->
+<button 
+(click)="toggleReaccion(reporte.id, 2)"
+class="group px-1 py-1 text-xs rounded-full flex items-center space-x-2 
+       transition-colors relative
+       text-white dark:text-gray-200 hover:text-red-500 dark:hover:text-red-300"
+[ngClass]="{
+  'bg-red-200/50 dark:bg-red-900/25 text-red-700 dark:text-red-300': haReaccionado(reporte.id, 2)
+}">
+<div class="rounded-full p-1 transition-all">
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" 
+       class="stroke-current fill-none"
+       stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+  </svg>
+</div>
+<span class="font-medium">{{ getReaccionesPorTipo(reporte.id, 2) }}</span>
+</button>
 
-                      <!-- Enojado (Alerta) -->
-                      <button 
-                        (click)="toggleReaccion(reporte.id, 3)"
-                        [class.bg-yellow-100]="haReaccionado(reporte.id, 3)"
-                        [class.text-yellow-600]="haReaccionado(reporte.id, 3)"
-                        [class.dark:text-yellow-400]="haReaccionado(reporte.id, 3)"
-                        class="group px-3 py-1 text-sm rounded-full flex items-center space-x-2 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors text-gray-500 dark:text-gray-400">
-                        <div class="rounded-full p-1 transition-all">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"/>
-                            <line x1="12" x2="12" y1="8" y2="12"/>
-                            <line x1="12" x2="12.01" y1="16" y2="16"/>
-                          </svg>
-                        </div>
-                        <span>{{ getReaccionesPorTipo(reporte.id, 3) }}</span>
-                      </button>
+<!-- Enojado (Alerta) -->
+<button 
+(click)="toggleReaccion(reporte.id, 3)"
+class="group px-1 py-1 text-xs rounded-full flex items-center space-x-2 
+       transition-colors relative
+       text-white dark:text-gray-200 hover:text-yellow-500 dark:hover:text-yellow-300"
+[ngClass]="{
+  'bg-yellow-200/50 dark:bg-yellow-900/25 text-yellow-700 dark:text-yellow-300': haReaccionado(reporte.id, 3)
+}">
+<div class="rounded-full p-1 transition-all">
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" 
+       class="stroke-current fill-none"
+       stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="10"/>
+    <line x1="12" x2="12" y1="8" y2="12"/>
+    <line x1="12" x2="12.01" y1="16" y2="16"/>
+  </svg>
+</div>
+<span class="font-medium">{{ getReaccionesPorTipo(reporte.id, 3) }}</span>
+</button>
                     </div>
 
-                    <!-- Lista de usuarios que reaccionaron -->
-                    <div *ngFor="let reaccion of reaccionesPorReporte[reporte.id]" class="flex items-center space-x-2">
-                      <div class="relative group" *ngIf="(reaccion.usuarios || []).length > 0">
-                        <div class="text-xs text-gray-500">
-                          {{ (reaccion.usuarios && reaccion.usuarios[0] && reaccion.usuarios[0].nombre) || 'Usuario' }}
-                          <span *ngIf="(reaccion.usuarios || []).length > 1"> y {{ reaccion.usuarios.length - 1 }} más </span>
-                        </div>
+                    <!-- Comentarios y Usuarios que reaccionaron -->
+                    <div class="flex items-center gap-4">
+                      <!-- Comentarios -->
+                      <button 
+                        (click)="toggleComentarios(reporte.id)" 
+                        class="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-square-icon lucide-message-square">
+                          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                        </svg>
+                        <span class="text-sm">{{ comentariosCounts[reporte.id]?.total || 0 }}</span>
+                      </button>
+
+                      <!-- Usuarios que reaccionaron -->
+                      <div class="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-400">
+                        <ng-container *ngFor="let reaccion of reaccionesPorReporte[reporte.id]">
+                          <div *ngIf="(reaccion.usuarios || []).length > 0" class="flex items-center">
+                            <span>
+                              {{ (reaccion.usuarios && reaccion.usuarios[0] && reaccion.usuarios[0].nombre) || 'Usuario' }}
+                              <span *ngIf="(reaccion.usuarios || []).length > 1"> y {{ reaccion.usuarios.length - 1 }} más</span>
+                            </span>
+                          </div>
+                        </ng-container>
                       </div>
                     </div>
                   </div>
                 </ng-container>
+                
 
                 <ng-template #loadingReacciones>
                   <app-skeleton-loader height="24px" width="120px"></app-skeleton-loader>
@@ -156,12 +203,6 @@
               <div class="comentarios-container">
                 <ng-container *ngIf="!comentariosLoading[reporte.id]; else loadingComentarios">
                   <div class="mt-4">
-                    <!-- Botón para mostrar/ocultar comentarios con contador -->
-                    <button (click)="toggleComentarios(reporte.id)" 
-                            class="text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white">
-                      💬 {{ comentariosCounts[reporte.id]?.total || 0 }} comentarios
-                    </button>
-
                     <!-- Lista de comentarios principales -->
                     <div *ngIf="mostrarComentarios[reporte.id]" class="space-y-4 mt-4">
                       <!-- Input para comentar - Este es el que mantenemos -->
@@ -210,12 +251,7 @@
                                 class="text-sm text-blue-500 hover:text-blue-600">
                                 Responder
                               </button>
-                              <button *ngIf="comentario.contador_respuestas > 0"
-                                      (click)="toggleRespuestas(reporte.id, comentario.id)"
-                                      class="text-sm text-blue-500 hover:text-blue-600">
-                                {{ mostrarRespuestas[comentario.id] ? 'Ocultar' : 'Ver' }} 
-                                {{ comentario.contador_respuestas }} respuestas
-                              </button>
+
                             </div>
                           </div>
                         </div>
