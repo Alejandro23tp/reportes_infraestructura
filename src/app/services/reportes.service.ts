@@ -41,7 +41,7 @@ export class ReportesService {
 
   actualizarestadoReporte(id: number, estado: string): Observable<any> {
     const url = `${this.environment}reportes/actualizar/${id}`;
-    return this.http.put(url, { estado });
+    return this.http.post(url, { estado });
   }
 
   getUbicaciones() {

@@ -65,6 +65,8 @@ export default class HomeComponent implements OnInit {
   private batchSize = 5;
 
   selectedImage: string | null = null; // Add this property
+  selectedReporte: any = null;
+  nuevoEstado: string = '';
 
   constructor(
     private srvReports: ReportesService,
@@ -496,5 +498,35 @@ export default class HomeComponent implements OnInit {
 
   closeImageViewer() { // Add this method
     this.selectedImage = null;
+  }
+
+  openEstadoModal(reporte: any) {
+    this.selectedReporte = reporte;
+    this.nuevoEstado = reporte.estado;
+  }
+
+  closeEstadoModal() {
+    this.selectedReporte = null;
+    this.nuevoEstado = '';
+  }
+
+  actualizarEstado() {
+    if (!this.selectedReporte || !this.nuevoEstado) return;
+
+    this.srvReports.actualizarestadoReporte(this.selectedReporte.id, this.nuevoEstado)
+      .subscribe({
+        next: (response) => {
+          // Update the local state
+          this.selectedReporte.estado = this.nuevoEstado;
+          // Close the modal
+          this.closeEstadoModal();
+          // Optional: Show success message
+          console.log('Estado actualizado con éxito');
+        },
+        error: (error) => {
+          console.error('Error al actualizar estado:', error);
+          // Optional: Show error message
+        }
+      });
   }
 }
