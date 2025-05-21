@@ -4,6 +4,34 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Reset de márgenes y paddings */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow-x: hidden;
+}
+
+/* Asegurar que el body ocupe toda la altura de la ventana */
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Eliminar márgenes por defecto de los elementos principales */
+h1, h2, h3, h4, h5, h6, p, ul, ol, li, figure, figcaption, blockquote, dl, dd {
+  margin: 0;
+  padding: 0;
+}
+
+/* Asegurar que las imágenes y elementos embebidos no tengan espacio adicional */
+img, embed, iframe, object, video {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
 
 @keyframes lava1 {
   0%, 100% { 

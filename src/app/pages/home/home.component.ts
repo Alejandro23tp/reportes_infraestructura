@@ -529,4 +529,36 @@ export default class HomeComponent implements OnInit {
         }
       });
   }
+
+  /**
+   * Calcula el total de usuarios que han reaccionado a un reporte
+   */
+  getTotalUsuariosReacciones(reporteId: number): number {
+    if (!this.reaccionesPorReporte[reporteId]) return 0;
+    
+    let total = 0;
+    this.reaccionesPorReporte[reporteId].forEach(reaccion => {
+      if (reaccion.usuarios && reaccion.usuarios.length) {
+        total += reaccion.usuarios.length;
+      }
+    });
+    
+    return total;
+  }
+
+  getNombrePrimerUsuarioReaccion(reporteId: number): string {
+    if (!this.reaccionesPorReporte[reporteId]) {
+      return 'Usuario';
+    }
+    
+    // Buscar el primer usuario en cualquier tipo de reacción
+    for (const reaccion of this.reaccionesPorReporte[reporteId]) {
+      if (reaccion.usuarios && reaccion.usuarios.length > 0) {
+        return reaccion.usuarios[0].nombre || 'Usuario';
+      }
+    }
+    
+    return 'Usuario';
+  }
+  
 }

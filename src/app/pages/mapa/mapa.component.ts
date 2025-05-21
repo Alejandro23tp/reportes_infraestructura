@@ -1,4 +1,6 @@
-import { Component, OnInit, inject, AfterViewInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, inject } from '@angular/core';
+import { HeaderComponent } from '../../components/header/header.component';
+import { MobileNavComponent } from '../../components/mobile-nav/mobile-nav.component';
 import { environment } from '../../../environments/environment.development';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -34,7 +36,7 @@ interface UrgenciaResumen {
 @Component({
   selector: 'app-mapa',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [HeaderComponent, MobileNavComponent, CommonModule, FormsModule, RouterModule],
   templateUrl: './mapa.component.html',
   styleUrls: ['./mapa.component.scss'],
 })
@@ -57,7 +59,7 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
   filtroBusqueda: string = '';
   mostrarAreas: boolean = false;
   private datosReportes: Ubicacion[] = [];
-  showDrawer: boolean = false;
+  isFilterPanelOpen: boolean = false;
   isMobile: boolean = false;
   activeFilters: ActiveFilter[] = [];
   categorias: string[] = [];
@@ -128,7 +130,7 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
       });
 
       this.cargarUbicaciones();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al inicializar el mapa:', error);
     }
   }
@@ -232,6 +234,46 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   aplicarFiltros(): void {
+    // Reset active filters
+    this.activeFilters = [];
+
+    // Add estado filter
+    if (this.filtroEstado) {
+      this.activeFilters.push({
+        type: 'estado',
+        value: this.filtroEstado,
+        label: `Estado: ${this.filtroEstado}`
+      });
+    }
+
+    // Add urgencia filter
+    if (this.filtroUrgencia) {
+      this.activeFilters.push({
+        type: 'urgencia',
+        value: this.filtroUrgencia,
+        label: `Urgencia: ${this.filtroUrgencia}`
+      });
+    }
+
+    // Add categoria filter
+    if (this.filtroCategoria) {
+      this.activeFilters.push({
+        type: 'categoria',
+        value: this.filtroCategoria,
+        label: `Categoría: ${this.filtroCategoria}`
+      });
+    }
+
+    // Add busqueda filter
+    if (this.filtroBusqueda) {
+      this.activeFilters.push({
+        type: 'busqueda',
+        value: this.filtroBusqueda,
+        label: `Búsqueda: ${this.filtroBusqueda}`
+      });
+    }
+
+    // Apply filters
     this.mostrarUbicaciones(this.datosReportes);
   }
 
@@ -283,10 +325,15 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
     this.markers = [];
 
     const ubicacionesFiltradas = ubicaciones.filter((reporte) => {
-      const cumpleEstado = !this.filtroEstado || reporte.estado === this.filtroEstado;
+      // Normalize estado for more flexible matching
+      const estadoNormalizado = reporte.estado.trim().toLowerCase();
+      const filtroEstadoNormalizado = this.filtroEstado ? this.filtroEstado.trim().toLowerCase() : '';
+
+      const cumpleEstado = !this.filtroEstado || estadoNormalizado === filtroEstadoNormalizado;
       const cumpleUrgencia = !this.filtroUrgencia || 
         this.normalizarUrgencia(reporte.urgencia) === this.filtroUrgencia.toLowerCase();
-      const cumpleCategoria = !this.filtroCategoria || reporte.categoria === this.filtroCategoria;
+      const cumpleCategoria = !this.filtroCategoria || 
+        reporte.categoria.toLowerCase() === this.filtroCategoria.toLowerCase();
       const cumpleBusqueda =
         !this.filtroBusqueda ||
         reporte.id.toString().includes(this.filtroBusqueda) ||
@@ -373,11 +420,22 @@ export class MapaComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private checkScreenSize() {
     this.isMobile = window.innerWidth < 768;
-    this.showDrawer = !this.isMobile;
+    this.isFilterPanelOpen = !this.isMobile;
   }
 
   toggleDrawer() {
-    this.showDrawer = !this.showDrawer;
+    this.isFilterPanelOpen = !this.isFilterPanelOpen;
+  }
+
+  toggleFilterPanel() {
+    this.isFilterPanelOpen = !this.isFilterPanelOpen;
+  }
+
+  // Manejar el evento de scroll del mapa
+  onMapScroll(event: Event) {
+    // Disparar manualmente el evento de scroll en la ventana
+    // para que sea detectado por el componente mobile-nav
+    window.dispatchEvent(new Event('scroll'));
   }
 
   centerMap() {

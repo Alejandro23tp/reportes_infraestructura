@@ -1,168 +1,76 @@
-<div class="w-full h-[calc(100vh-4rem)] flex flex-col md:flex-row relative" role="main">
-  <!-- Header con transición de ocultamiento -->
-  <header class="bg-gray-oscuro shadow-xl fixed top-0 left-0 right-0 z-[1000] backdrop-blur-md transition-all duration-300 border-b border-gray-800"
-    [class.translate-y-[-100%]]="!isHeaderVisible"
-  >
-    <div class="container mx-auto px-4">
-      <div class="flex items-center justify-between h-16">
-        <!-- Logo y título -->
-        <div class="flex items-center space-x-4">
-          <div class="w-10 h-10 rounded-lg bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center shadow-xl border border-gray-800">
-            <span class="text-white text-lg font-bold">RC</span>
-          </div>
-          <h1 class="text-xl font-bold text-white">
-            Reportes Comunitarios
-          </h1>
-        </div>
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col overflow-hidden max-h-screen fixed inset-0" role="main">
+  <!-- Desktop Navigation Bar -->
+  <app-header class="hidden md:block" (toggleFilterPanel)="toggleFilterPanel()"></app-header>
 
-        <!-- Navegación desktop -->
-        <nav class="hidden md:flex items-center space-x-1">
-          <!-- Inicio -->
-          <a routerLink="/" 
-             routerLinkActive="bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300"
-             [routerLinkActiveOptions]="{exact: true}"
-             class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
-            <div class="flex items-center space-x-2">
-              <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" class="fill-current">
-                <path d="M240-200h120v-240h240v240h120v-360L480-740 240-560v360Zm-80 80v-480l320-240 320 240v480H520v-240h-80v240H160Zm320-350Z"/>
-              </svg>
-              <span>Inicio</span>
-            </div>
-          </a>
+  <!-- Main Content Area -->
+  <div class="flex flex-col md:flex-row md:mt-16 relative h-[calc(100vh-4rem)] md:h-[calc(100vh-4rem)] overflow-hidden">
+    <!-- Map Container - Adaptado para móvil y desktop -->
+    <div class="flex-grow relative h-full">
+      <div id="map" class="absolute inset-0 bottom-16 md:bottom-0 z-10" role="application" aria-label="Mapa de reportes"></div>
+    </div>
 
-          <!-- Notificaciones -->
-          <a routerLink="/notificaciones" 
-             routerLinkActive="bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300"
-             class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
-            <div class="flex items-center space-x-2">
-              <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" class="fill-current">
-                <path d="M160-200v-80h80v-280q0-83 50-147.5T420-792v-28q0-25 17.5-42.5T480-880q25 0 42.5 17.5T540-820v28q80 20 130 84.5T720-560v280h80v80H160Zm320-300Zm0 420q-33 0-56.5-23.5T400-160h160q0 33-23.5 56.5T480-80ZM320-280h320v-280q0-66-47-113t-113-47q-66 0-113 47t-47 113v280Z"/>
-              </svg>
-              <span>Notificaciones</span>
-            </div>
-          </a>
-
-          <!-- Mapa -->
-          <a routerLink="/mapa" 
-             routerLinkActive="bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300"
-             class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
-            <div class="flex items-center space-x-2">
-              <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" class="fill-current">
-                <path d="M480-301q99-80 149.5-154T680-594q0-90-56-148t-144-58q-88 0-144 58t-56 148q0 65 50.5 139T480-301Zm0 101Q339-304 269.5-402T200-594q0-125 78-205.5T480-880q124 0 202 80.5T760-594q0 94-69.5 192T480-200Zm0-320q33 0 56.5-23.5T560-600q0-33-23.5-56.5T480-680q-33 0-56.5 23.5T400-600q0 33 23.5 56.5T480-520ZM200-80v-80h560v80H200Zm280-520Z"/>
-              </svg>
-              <span>Mapa</span>
-            </div>
-          </a>
-        </nav>
-
-        <!-- Configuración y perfil -->
-        <div class="hidden md:flex items-center space-x-2">
-          <button class="p-2 rounded-lg text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50">
-            <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" class="fill-current">
-              <path d="m370-80-16-128q-13-5-24.5-12T307-235l-119 50L78-375l103-78q-1-7-1-13.5v-27q0-6.5 1-13.5L78-585l110-190 119 50q11-8 23-15t24-12l16-128h220l16 128q13 5 24.5 12t22.5 15l119-50 110 190-103 78q1 7 1 13.5v27q0 6.5-2 13.5l103 78-110 190-118-50q-11 8-23 15t-24 12L590-80H370Zm112-260q58 0 99-41t41-99q0-58-41-99t-99-41q-58 0-99 41t-41 99q0 58 41 99t99 41Z"/>
+    <!-- Filter Panel - Mejorado para ambas vistas -->
+    <div 
+      class="fixed md:relative top-0 right-0 w-full md:w-80 h-[calc(100vh-4rem)] md:h-[calc(100vh-4rem)] bg-white dark:bg-gray-800 shadow-xl transform transition-transform duration-300 z-40 overflow-y-auto pb-20 md:pb-6"
+      [class.translate-x-full]="!isFilterPanelOpen"
+      [class.md:translate-x-0]="true"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="p-4 md:p-6 relative">
+        <!-- Encabezado del panel de filtros -->
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-bold text-gray-800 dark:text-white">Filtros</h2>
+          <button 
+            (click)="toggleFilterPanel()" 
+            class="md:hidden text-gray-600 dark:text-gray-300 hover:text-red-500 transition-colors p-2"
+            aria-label="Cerrar panel de filtros"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
             </svg>
           </button>
         </div>
-      </div>
-    </div>
-  </header>
-  <!-- Botón para mostrar/ocultar header -->
-  <button 
-    (click)="toggleHeader()"
-    class="absolute top-4 left-4 z-[1100] bg-white/20 backdrop-blur-md rounded-full p-2 hover:bg-white/30 transition-colors shadow-md"
-    [attr.aria-label]="isHeaderVisible ? 'Ocultar encabezado' : 'Mostrar encabezado'"
-  >
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="isHeaderVisible ? 'M6 18L18 6M6 6l12 12' : 'M5 10l7-7m0 0l7 7m-7-7v18'" />
-    </svg>
-  </button>
 
-  <!-- Panel de filtros -->
-  <div 
-    id="drawer-filtros"
-    [class.translate-x-full]="!showDrawer"
-    class="fixed bottom-0 left-0 w-72 bg-white/90 rounded-lg shadow-xl z-[1000] p-4 backdrop-blur-sm"
-
-    role="dialog"
-    aria-label="Panel de filtros"
-  >
-    <!-- Botón cerrar Drawer (solo en móvil) -->
-    <button 
-      (click)="toggleDrawer()" 
-      class="md:hidden text-gray-500 hover:text-gray-700 mb-4"
-      aria-label="Cerrar filtros"
-    >
-      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-      </svg>
-    </button>
-
-    <!-- Contenido del panel -->
-    <div class="bg-white p-4 rounded-lg shadow-lg md:shadow-none">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="font-bold text-lg">Filtros</h3>
-        <span class="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
-          {{markers.length}} reportes
-        </span>
-      </div>
-
-      <div class="flex flex-wrap gap-2 mb-4" *ngIf="activeFilters.length">
-        <span 
-          *ngFor="let filter of activeFilters"
-          class="inline-flex items-center px-2 py-1 text-sm font-medium text-white bg-blue-600 rounded-full cursor-pointer"
-          (click)="removeFilter(filter)"
-        >
-          {{filter.label}}
-          <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-          </svg>
-        </span>
-      </div>
-
-      <div class="space-y-4">
-        <div>
-          <label for="search-input" class="block text-sm font-medium mb-1">Buscar</label>
-          <input
-            id="search-input"
+        <!-- Search Input -->
+        <div class="mb-3">
+          <label for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Buscar</label>
+          <input 
+            type="text" 
+            id="search" 
             [(ngModel)]="filtroBusqueda"
             (input)="aplicarFiltros()"
-            type="text"
-            placeholder="Buscar por ID o descripción..."
-            class="w-full p-2 rounded border bg-white shadow-sm"
-            aria-label="Buscar reportes"
-          />
+            (click)="$event.stopPropagation()"
+            placeholder="Buscar por ID o descripción"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+          >
         </div>
 
-        <div>
-          <label for="estado-select" class="block text-sm font-medium mb-1">Estado</label>
+        <!-- Status Filter -->
+        <div class="mb-3">
+          <label for="status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Estado</label>
           <select 
-            id="estado-select"
-            [(ngModel)]="filtroEstado" 
+            id="status"
+            [(ngModel)]="filtroEstado"
             (change)="aplicarFiltros()"
-            class="w-full p-2 rounded border bg-white shadow-sm"
-            aria-label="Filtrar por estado"
-            data-tooltip-target="tooltip-estado"
+            (click)="$event.stopPropagation()"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm"
           >
             <option value="">Todos los estados</option>
             <option value="pendiente">Pendiente</option>
             <option value="en_proceso">En proceso</option>
             <option value="completado">Completado</option>
           </select>
-          <div id="tooltip-estado" role="tooltip" class="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg shadow-sm opacity-0 transition-opacity tooltip">
-            Filtra los reportes por su estado actual
-            <div class="tooltip-arrow" data-popper-arrow></div>
-          </div>
         </div>
 
-        <div>
-          <label for="urgencia-select" class="block text-sm font-medium mb-1">Urgencia</label>
+        <!-- Urgency Filter -->
+        <div class="mb-3">
+          <label for="urgency" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Urgencia</label>
           <select 
-            id="urgencia-select"
-            [(ngModel)]="filtroUrgencia" 
+            id="urgency"
+            [(ngModel)]="filtroUrgencia"
             (change)="aplicarFiltros()"
-            class="w-full p-2 rounded border bg-white shadow-sm"
-            aria-label="Filtrar por urgencia"
-            data-tooltip-target="tooltip-urgencia"
+            (click)="$event.stopPropagation()"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm"
           >
             <option value="">Todas las urgencias</option>
             <option value="critico">Crítico</option>
@@ -170,85 +78,77 @@
             <option value="medio">Medio</option>
             <option value="bajo">Bajo</option>
           </select>
-          <div id="tooltip-urgencia" role="tooltip" class="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg shadow-sm opacity-0 transition-opacity tooltip">
-            Filtra los reportes por nivel de urgencia
-            <div class="tooltip-arrow" data-popper-arrow></div>
-          </div>
         </div>
 
-        <div>
-          <label for="categoria-select" class="block text-sm font-medium mb-1">Categoría</label>
+        <!-- Category Filter -->
+        <div class="mb-3">
+          <label for="category" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Categoría</label>
           <select 
-            id="categoria-select"
-            [(ngModel)]="filtroCategoria" 
+            id="category"
+            [(ngModel)]="filtroCategoria"
             (change)="aplicarFiltros()"
-            class="w-full p-2 rounded border bg-white shadow-sm"
-            aria-label="Filtrar por categoría"
-            data-tooltip-target="tooltip-categoria"
+            (click)="$event.stopPropagation()"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm"
           >
             <option value="">Todas las categorías</option>
             <option *ngFor="let categoria of categorias" [value]="categoria">{{categoria}}</option>
           </select>
-          <div id="tooltip-categoria" role="tooltip" class="absolute z-10 invisible inline-block px-3 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg shadow-sm opacity-0 transition-opacity tooltip">
-            Filtra los reportes por tipo de incidente
-            <div class="tooltip-arrow" data-popper-arrow></div>
-          </div>
         </div>
 
-        <div class="space-y-2 pt-2 border-t">
-          <label class="flex items-center gap-2 cursor-pointer">
+        <!-- Additional Options -->
+        <div class="space-y-3 mt-3">
+          <div class="flex items-center">
             <input 
               type="checkbox" 
-              id="toggle-areas"
-              [(ngModel)]="mostrarAreas" 
+              id="show-areas"
+              [(ngModel)]="mostrarAreas"
               (change)="toggleAreas()"
-              class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-              aria-label="Mostrar áreas afectadas"
+              class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             >
-            <span class="text-sm">Mostrar áreas afectadas</span>
-          </label>
+            <label for="show-areas" class="ml-2 block text-sm text-gray-900 dark:text-gray-300">
+              Mostrar áreas afectadas
+            </label>
+          </div>
 
-          <button 
-            (click)="centerMap()" 
-            class="w-full p-2 text-sm bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors"
-            aria-label="Centrar mapa"
-            title="Centrar mapa en los marcadores"
-          >
-            Centrar mapa
-          </button>
-
-          <button 
-            (click)="limpiarFiltros()" 
-            class="w-full p-2 text-sm bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors"
-            aria-label="Limpiar filtros"
-            title="Restablecer todos los filtros"
-          >
-            Limpiar filtros
-          </button>
+          <div class="grid grid-cols-2 gap-2">
+            <button 
+              (click)="centerMap()"
+              class="w-full px-3 py-1.5 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors text-sm"
+            >
+              Centrar Mapa
+            </button>
+            <button 
+              (click)="limpiarFiltros()"
+              class="w-full px-3 py-1.5 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-colors text-sm"
+            >
+              Limpiar Filtros
+            </button>
+          </div>
         </div>
 
-        <div class="pt-2 border-t">
-          <p class="text-sm font-medium mb-2">Resumen</p>
-          <div class="grid grid-cols-2 gap-2 text-xs">
-            <div class="flex items-center gap-1">
-              <span class="w-3 h-3 rounded-full bg-red-500"></span>
-              <span>Crítico: {{resumen.urgencia.critico}}</span>
+        <!-- Summary -->
+        <div class="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
+          <h3 class="text-base font-semibold text-gray-800 dark:text-white mb-2">Resumen</h3>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="flex items-center space-x-2">
+              <span class="w-3 h-3 bg-red-500 rounded-full"></span>
+              <span class="text-xs text-gray-700 dark:text-gray-300">Crítico: {{resumen.urgencia.critico}}</span>
             </div>
-            <div class="flex items-center gap-1">
-              <span class="w-3 h-3 rounded-full bg-orange-600"></span>
-              <span>Alto: {{resumen.urgencia.alto}}</span>
+            <div class="flex items-center space-x-2">
+              <span class="w-3 h-3 bg-orange-500 rounded-full"></span>
+              <span class="text-xs text-gray-700 dark:text-gray-300">Alto: {{resumen.urgencia.alto}}</span>
             </div>
-            <div class="flex items-center gap-1">
-              <span class="w-3 h-3 rounded-full bg-orange-500"></span>
-              <span>Medio: {{resumen.urgencia.medio}}</span>
+            <div class="flex items-center space-x-2">
+              <span class="w-3 h-3 bg-yellow-500 rounded-full"></span>
+              <span class="text-xs text-gray-700 dark:text-gray-300">Medio: {{resumen.urgencia.medio}}</span>
             </div>
-            <div class="flex items-center gap-1">
-              <span class="w-3 h-3 rounded-full bg-green-500"></span>
-              <span>Bajo: {{resumen.urgencia.bajo}}</span>
+            <div class="flex items-center space-x-2">
+              <span class="w-3 h-3 bg-green-500 rounded-full"></span>
+              <span class="text-xs text-gray-700 dark:text-gray-300">Bajo: {{resumen.urgencia.bajo}}</span>
             </div>
-            <div class="flex items-center gap-1">
-              <span class="w-3 h-3 rounded-full bg-gray-500"></span>
-              <span>Total: {{resumen.total}}</span>
+            <div class="flex items-center space-x-2 col-span-2 mt-2">
+              <span class="w-3 h-3 bg-gray-500 rounded-full"></span>
+              <span class="text-xs text-gray-700 dark:text-white font-semibold">Total: {{resumen.total}}</span>
             </div>
           </div>
         </div>
@@ -256,71 +156,34 @@
     </div>
   </div>
 
-  <!-- Botón toggle para Drawer en móvil -->
-  <button 
-    (click)="toggleDrawer()" 
-    class="md:hidden fixed top-[120px] right-4 z-[1001] bg-white p-3 rounded-lg shadow-lg hover:bg-gray-100 transition-colors border border-gray-200"
-    [attr.aria-label]="showDrawer ? 'Cerrar filtros' : 'Abrir filtros'"
-    [title]="showDrawer ? 'Cerrar filtros' : 'Abrir filtros'"
+  <!-- Image Modal -->
+  <div 
+    *ngIf="showImageModal" 
+    class="fixed inset-0 bg-black bg-opacity-75 z-[1000] flex items-center justify-center p-4"
   >
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      class="h-6 w-6 transform transition-transform" 
-      [class.rotate-90]="showDrawer"
-      fill="none" 
-      viewBox="0 0 24 24" 
-      stroke="currentColor"
-    >
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
-    </svg>
-  </button>
-
-  <!-- Mapa -->
-  <div id="map" class="w-full h-full md:flex-1 relative" role="application" aria-label="Mapa de reportes">
-    <!-- Panel de filtros flotante -->
-    <div 
-      id="drawer-filtros"
-      [class.translate-x-full]="!showDrawer"
-      class="absolute top-4 right-4 w-72 bg-white/90 rounded-lg shadow-xl z-[1000] p-4 backdrop-blur-sm"
-      role="dialog"
-      aria-label="Panel de filtros"
-    >
-      <!-- Botón cerrar Drawer (solo en móvil) -->
-      <button 
-        (click)="toggleDrawer()" 
-        class="md:hidden text-gray-500 hover:text-gray-700 mb-4"
-        aria-label="Cerrar filtros"
-      >
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-        </svg>
-      </button>
-
-      <!-- Contenido del panel -->
-      <div class="bg-white p-4 rounded-lg shadow-lg md:shadow-none">
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="font-bold text-lg">Filtros</h3>
-          <span class="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
-            <!-- Contenido adicional del filtro -->
-          </span>
-        </div>
-        <!-- Resto del contenido del filtro -->
+    <div class="max-w-4xl w-full bg-white dark:bg-gray-800 rounded-lg shadow-2xl overflow-hidden">
+      <div class="flex justify-end p-4">
+        <button 
+          (click)="closeImageModal()"
+          class="text-gray-600 dark:text-gray-300 hover:text-red-500 transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
       </div>
-    </div>
-
-    <!-- Modal para mostrar la imagen en tamaño completo -->
-  <div *ngIf="showImageModal" class="fixed inset-0 bg-black bg-opacity-50 z-[1002] flex items-center justify-center" role="dialog" aria-label="Modal de imagen">
-    <div class="bg-white p-4 rounded-lg max-w-[90%] max-h-[90%] relative">
-      <button 
-        (click)="closeImageModal()" 
-        class="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-        aria-label="Cerrar modal"
+      <img 
+        *ngIf="selectedImageUrl" 
+        [src]="selectedImageUrl" 
+        alt="Imagen del reporte" 
+        class="w-full h-auto max-h-[80vh] object-contain"
       >
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-        </svg>
-      </button>
-      <img *ngIf="selectedImageUrl" [src]="selectedImageUrl" alt="Foto del reporte" class="max-w-full max-h-[80vh] object-contain">
     </div>
   </div>
+    
+  <!-- Mobile Navigation - Fixed at Bottom -->
+  <app-mobile-nav 
+    class="md:hidden fixed bottom-0 left-0 right-0 h-16 z-40 bg-gray-800 shadow-lg" 
+    (toggleFilterPanel)="toggleFilterPanel()"
+  ></app-mobile-nav>
 </div>

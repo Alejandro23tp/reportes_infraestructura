@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- Fondo circular -->
+  <circle cx="100" cy="100" r="90" fill="#3498db" />
+  
+  <!-- Icono de ubicación/marca -->
+  <path d="M100 40c-25 0-45 20-45 45 0 32 40 70 45 75 5-5 45-43 45-75 0-25-20-45-45-45zm0 65c-12 0-22-10-22-22s10-22 22-22 22 10 22 22-10 22-22 22z" fill="#ffffff" />
+  
+  <!-- Burbujas de diálogo comunitario -->
+  <circle cx="60" cy="150" r="15" fill="#ffffff" opacity="0.9" />
+  <circle cx="95" cy="160" r="12" fill="#ffffff" opacity="0.7" />
+  <circle cx="125" cy="145" r="18" fill="#ffffff" opacity="0.8" />
+  
+  <!-- Líneas de conexión -->
+  <path d="M65 138l22 10" stroke="#ffffff" stroke-width="3" stroke-linecap="round" />
+  <path d="M107 155l12-8" stroke="#ffffff" stroke-width="3" stroke-linecap="round" />
+</svg>

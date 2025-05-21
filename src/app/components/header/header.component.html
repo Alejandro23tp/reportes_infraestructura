@@ -1,92 +1,165 @@
-<header class="bg-gray-oscuro shadow-xl fixed top-0 left-0 right-0 z-50 backdrop-blur-md transition-all duration-300 border-b border-gray-800">
-  <div class="container mx-auto px-4">
-    <div class="flex items-center justify-between h-16">
-      <!-- Logo y título -->
-      <div class="flex items-center space-x-4">
-        <div class="w-10 h-10 rounded-lg bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center shadow-xl border border-gray-800">
-          <span class="text-white text-lg font-bold">RC</span>
-        </div>
-        <h1 class="text-xl font-bold text-white">
-          Reportes Comunitarios
-        </h1>
+<header class="fixed top-0 left-0 right-0 z-50 bg-gray-900/90 backdrop-blur-xl border-b border-white/10 transition-all duration-300 hidden md:block">
+  <div class="container mx-auto px-4 py-2">
+    <div class="flex items-center justify-between">
+      <!-- Logo -->
+      <div class="w-10 h-10">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" class="w-full h-full">
+          <circle cx="100" cy="100" r="90" fill="#3498db" />
+          <path d="M100 40c-25 0-45 20-45 45 0 32 40 70 45 75 5-5 45-43 45-75 0-25-20-45-45-45zm0 65c-12 0-22-10-22-22s10-22 22-22 22 10 22 22-10 22-22 22z" fill="#ffffff" />
+          <circle cx="60" cy="150" r="15" fill="#ffffff" opacity="0.9" />
+          <circle cx="95" cy="160" r="12" fill="#ffffff" opacity="0.7" />
+          <circle cx="125" cy="145" r="18" fill="#ffffff" opacity="0.8" />
+          <path d="M65 138l22 10" stroke="#ffffff" stroke-width="3" stroke-linecap="round" />
+          <path d="M107 155l12-8" stroke="#ffffff" stroke-width="3" stroke-linecap="round" />
+        </svg>
       </div>
 
-      <!-- Navegación desktop -->
-      <nav class="hidden md:flex items-center space-x-1">
-        <!-- Inicio -->
-        <a routerLink="/" 
-           routerLinkActive="bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300"
-           [routerLinkActiveOptions]="{exact: true}"
-           class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
-          <div class="flex items-center space-x-2">
+      <!-- Navegación desktop y filtro de mapa -->
+      <div class="flex items-center space-x-4">
+        <!-- Navegación desktop -->
+        <nav class="flex items-center space-x-4">
+          <!-- Inicio -->
+          <a routerLink="/" 
+             routerLinkActive="bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300"
+             class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors flex items-center space-x-2">
             <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" class="fill-current">
               <path d="M240-200h120v-240h240v240h120v-360L480-740 240-560v360Zm-80 80v-480l320-240 320 240v480H520v-240h-80v240H160Zm320-350Z"/>
             </svg>
             <span>Inicio</span>
-          </div>
-        </a>
+          </a>
 
-        <!-- Notificaciones -->
-        <a routerLink="/notificaciones" 
-           routerLinkActive="bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300"
-           class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
-          <div class="flex items-center space-x-2">
-            <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" class="fill-current">
-              <path d="M160-200v-80h80v-280q0-83 50-147.5T420-792v-28q0-25 17.5-42.5T480-880q25 0 42.5 17.5T540-820v28q80 20 130 84.5T720-560v280h80v80H160Zm320-300Zm0 420q-33 0-56.5-23.5T400-160h160q0 33-23.5 56.5T480-80ZM320-280h320v-280q0-66-47-113t-113-47q-66 0-113 47t-47 113v280Z"/>
-            </svg>
-            <span>Notificaciones</span>
-          </div>
-        </a>
-
-        <!-- Mapa -->
-        <a routerLink="/mapa" 
-           routerLinkActive="bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300"
-           class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors">
-          <div class="flex items-center space-x-2">
-            <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" class="fill-current">
-              <path d="M480-301q99-80 149.5-154T680-594q0-90-56-148t-144-58q-88 0-144 58t-56 148q0 65 50.5 139T480-301Zm0 101Q339-304 269.5-402T200-594q0-125 78-205.5T480-880q124 0 202 80.5T760-594q0 94-69.5 192T480-200Zm0-320q33 0 56.5-23.5T560-600q0-33-23.5-56.5T480-680q-33 0-56.5 23.5T400-600q0 33 23.5 56.5T480-520ZM200-80v-80h560v80H200Zm280-520Z"/>
+          <!-- Mapa -->
+          <a routerLink="/mapa" 
+             routerLinkActive="bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-300"
+             class="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors flex items-center space-x-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-icon">
+              <path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/>
+              <path d="M15 5.764v15"/>
+              <path d="M9 3.236v15"/>
             </svg>
             <span>Mapa</span>
-          </div>
-        </a>
-      </nav>
+          </a>
+        </nav>
+      </div>
 
-      <!-- Perfil, configuración y logout -->
-      <div class="hidden md:flex items-center space-x-2">
-        <button class="p-2 rounded-lg text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700/50">
-          <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" class="fill-current">
-            <path d="m370-80-16-128q-13-5-24.5-12T307-235l-119 50L78-375l103-78q-1-7-1-13.5v-27q0-6.5 1-13.5L78-585l110-190 119 50q11-8 23-15t24-12l16-128h220l16 128q13 5 24.5 12t22.5 15l119-50 110 190-103 78q1 7 1 13.5v27q0 6.5-2 13.5l103 78-110 190-118-50q-11 8-23 15t-24 12L590-80H370Zm112-260q58 0 99-41t41-99q0-58-41-99t-99-41q-58 0-99 41t-41 99q0 58 41 99t99 41Z"/>
-          </svg>
-        </button>
-        <div class="flex items-center space-x-3 px-4 py-2 rounded-lg bg-gray-50 dark:bg-gray-700/50">
-          <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-600 to-pink-600 flex items-center justify-center">
-            <span class="text-white text-sm font-bold">{{ userName[0].toUpperCase() }}</span>
-          </div>
-          <div class="text-sm">
-            <p class="font-medium text-gray-900 dark:text-white">{{ userName }}</p>
-            <p class="text-xs text-gray-500 dark:text-gray-400">{{ userRole }}</p>
-          </div>
-        </div>
-        <button 
-          (click)="onLogout()"
-          class="px-4 py-2 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors">
-          <div class="flex items-center space-x-2">
-            <svg class="w-5 h-5 fill-current" viewBox="0 0 20 20" version="1.1" xmlns="http://www.w3.org/2000/svg">
-              <g id="layer1">
-                <path d="M 0 1 L 0 20 L 12 20 L 12 16 L 11 16 L 11 19 L 1 19 L 1 2 L 11 2 L 11 5 L 12 5 L 12 1 L 0 1 z M 15 7 L 18 10 L 5 10 L 5 11 L 18 11 L 15 14 L 16.5 14 L 20 10.5 L 16.5 7 L 15 7 z"/>
-              </g>
+      <!-- Área de Usuario -->
+      <div class="hidden md:flex items-center space-x-4">
+
+        <!-- Botón de Notificaciones -->
+        <div class="relative group z-[2000]">
+          <button class="text-white/70 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
             </svg>
-            <span>Cerrar Sesión</span>
+          </button>
+          
+          <!-- Dropdown de Notificaciones -->
+          <div class="absolute right-0 top-full mt-2 w-80 bg-gray-800/95 backdrop-blur-xl rounded-xl shadow-2xl border border-white/10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 ease-in-out z-[2000]">
+            <div class="p-2">
+              <div class="flex justify-between items-center px-4 py-2">
+                <h3 class="text-white font-medium">Notificaciones</h3>
+                <button class="text-xs text-blue-400 hover:text-blue-300">Marcar todas como leídas</button>
+              </div>
+              
+              <!-- Lista de notificaciones -->
+              <div class="max-h-80 overflow-y-auto">
+                <!-- Notificación 1 -->
+                <div class="px-4 py-3 hover:bg-white/10 transition-colors border-l-2 border-blue-500">
+                  <div class="flex items-start">
+                    <div class="flex-shrink-0 mr-3">
+                      <div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
+                        </svg>
+                      </div>
+                    </div>
+                    <div>
+                      <p class="text-sm text-white">Nuevo reporte creado en la zona norte</p>
+                      <p class="text-xs text-gray-400 mt-1">Hace 5 minutos</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Notificación 2 -->
+                <div class="px-4 py-3 hover:bg-white/10 transition-colors">
+                  <div class="flex items-start">
+                    <div class="flex-shrink-0 mr-3">
+                      <div class="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                        </svg>
+                      </div>
+                    </div>
+                    <div>
+                      <p class="text-sm text-white">Reporte #1234 ha sido actualizado</p>
+                      <p class="text-xs text-gray-400 mt-1">Hace 30 minutos</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Notificación 3 -->
+                <div class="px-4 py-3 hover:bg-white/10 transition-colors">
+                  <div class="flex items-start">
+                    <div class="flex-shrink-0 mr-3">
+                      <div class="w-8 h-8 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                      </div>
+                    </div>
+                    <div>
+                      <p class="text-sm text-white">Alerta de inundación en zona sur</p>
+                      <p class="text-xs text-gray-400 mt-1">Hace 2 horas</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Ver todas -->
+              <div class="px-4 py-2 border-t border-white/10 mt-2">
+                <a href="#" class="text-sm text-blue-400 hover:text-blue-300 block text-center">Ver todas las notificaciones</a>
+              </div>
+            </div>
           </div>
-        </button>
-      </div>
-
-      <!-- Avatar móvil -->
-      <div class="md:hidden">
-        <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-600 to-pink-600 flex items-center justify-center">
-          <span class="text-white text-sm font-bold">{{ userName[0].toUpperCase() }}</span>
         </div>
-      </div>
+
+          <!-- Menú de Usuario -->
+          <div class="relative group z-[2000]">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-600 to-pink-600 flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-white/30 transition-all">
+              <span class="text-white text-sm font-bold">{{ userName[0].toUpperCase() }}</span>
+            </div>
+            
+            <!-- Dropdown -->
+            <div class="absolute right-0 top-full mt-2 w-56 bg-gray-800/95 backdrop-blur-xl rounded-xl shadow-2xl border border-white/10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 ease-in-out z-[2000]">
+              <div class="py-2">
+                <a href="#" class="px-4 py-3 text-sm text-white hover:bg-white/10 transition-colors flex items-center space-x-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                  </svg>
+                  <span>Perfil</span>
+                </a>
+                <a routerLink="/ajustes" class="px-4 py-3 text-sm text-white hover:bg-white/10 transition-colors flex items-center space-x-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M5 4a1 1 0 00-2 0v7.268a2 2 0 000 3.464V16a1 1 0 102 0v-1.268a2 2 0 000-3.464V4zM11 4a1 1 0 10-2 0v1.268a2 2 0 000 3.464V16a1 1 0 102 0V8.732a2 2 0 000-3.464V4zM16 3a1 1 0 011 1v7.268a2 2 0 010 3.464V16a1 1 0 11-2 0v-1.268a2 2 0 010-3.464V4a1 1 0 011-1z" />
+                  </svg>
+                  <span>Configuración</span>
+                </a>
+                <hr class="border-t border-white/10 my-2">
+                <button 
+                  (click)="onLogout()"
+                  class="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors flex items-center space-x-3"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 1.293a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L14.586 11H7a1 1 0 110-2h7.586l-1.293-1.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                  </svg>
+                  <span>Cerrar Sesión</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        
     </div>
   </div>
 </header>

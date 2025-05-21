@@ -5,6 +5,7 @@ import HomeComponent from './pages/home/home.component';
 import { AuthGuard } from './guards/auth.guard';
 import { ResetPasswordComponent } from './pages/reset-password/reset-password.component';
 import { NotificacionesComponent } from './pages/notificaciones/notificaciones.component';
+import { AjustesComponent } from './pages/ajustes/ajustes.component';
 
 export const routes: Routes = [
   {
@@ -33,6 +34,11 @@ export const routes: Routes = [
     path: 'notificaciones',
     component: NotificacionesComponent,
     canActivate: [AuthGuard]
+  },
+  {
+    path: 'ajustes',
+    component: AjustesComponent,
+    canActivate: [AuthGuard]  
   },
   {
     path: '**',

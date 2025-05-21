@@ -6,25 +6,45 @@ $gray-900: #111827;
 $blue-300: #93c5fd;
 $transition-duration: 0.3s;
 
-// Estilo del host
+// Estilos para el mapa
+#map {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto; /* Asegurar que el mapa tenga scroll */
+  -webkit-overflow-scrolling: touch; /* Mejorar scroll en dispositivos táctiles */
+}
+
+// Asegurar que el contenedor principal ocupe todo el espacio
 :host {
   display: block;
-  min-height: 100vh; // Asegurar altura mínima
-  height: 100%;
-}
-
-// Estilo del contenedor principal
-.w-full.h-screen {
-  position: relative;
-}
-
-// Estilo del mapa
-#map {
-  min-height: 300px;
   height: 100vh;
-  width: 100%;
-  min-height: 100vh; // Asegura que el mapa ocupe todo el espacio
-  position: relative; // Necesario para posicionar el botón dentro del mapa
+  position: relative;
+  overflow: hidden;
+}
+
+// Estilos para el mobile-nav
+app-mobile-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+}
+
+// Menú desplegable del perfil
+app-mobile-nav .profile-menu {
+  z-index: 1000;
+  position: absolute;
+  bottom: 4rem;
+  right: 1rem;
+  overflow: visible;
 }
 
 // Estilo del panel

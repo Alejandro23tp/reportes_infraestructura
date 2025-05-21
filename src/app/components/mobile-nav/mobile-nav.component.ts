@@ -1,7 +1,7 @@
-import { Component, HostListener, OnInit, OnDestroy } from '@angular/core';
+import { Component, HostListener, OnInit, OnDestroy, Output, EventEmitter, inject } from '@angular/core';
 import { AuthService } from '../../services/auth.service';
 import { CommonModule } from '@angular/common';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -15,6 +15,9 @@ export class MobileNavComponent implements OnInit, OnDestroy {
   isProfileMenuOpen = false;
   private userSubscription: Subscription | null = null;
   currentUser: any = null;
+  router = inject(Router);
+
+  @Output() toggleFilterPanel = new EventEmitter<void>();
 
   constructor(private authService: AuthService) {}
 

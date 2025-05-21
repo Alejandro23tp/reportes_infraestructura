@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { AuthService } from '../../services/auth.service';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-header',
@@ -10,11 +11,17 @@ import { filter } from 'rxjs/operators';
   standalone: true,
   imports: [CommonModule, RouterLink, RouterLinkActive]
 })
-export class HeaderComponent implements OnInit {
+export class HeaderComponent implements OnInit, OnDestroy {
+  private routerSubscription: Subscription = Subscription.EMPTY;
+  isMapPage: boolean = false;
+
   userName: string = '';
   userRole: string = '';
 
-  constructor(private authService: AuthService, private router: Router) {
+  constructor(
+    private authService: AuthService, 
+    private router: Router
+  ) {
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe(() => {
@@ -29,9 +36,22 @@ export class HeaderComponent implements OnInit {
         this.userRole = user.rol || '';
       }
     });
+
+    // Track route changes to update isMapPage
+    this.routerSubscription = this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe(() => {
+      this.isMapPage = this.router.url.includes('/mapa');
+    });
   }
 
   onLogout() {
     this.authService.logout();
+  }
+
+  ngOnDestroy() {
+    if (this.routerSubscription) {
+      this.routerSubscription.unsubscribe();
+    }
   }
 }
