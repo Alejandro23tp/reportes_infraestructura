@@ -1,0 +1,107 @@
+<div class="dashboard-container p-4">
+  <h1 class="text-2xl font-bold mb-6">Panel de Control</h1>
+  
+  <!-- Loading State -->
+  @if (loading) {
+    <div class="loading-container text-center p-8">
+      <p class="mb-4">Cargando estadísticas...</p>
+      <p-progressBar mode="indeterminate" [style]="{height: '6px'}"></p-progressBar>
+    </div>
+  }
+
+  <!-- Error State -->
+  @if (error) {
+    <div class="error-container p-4 mb-4 bg-red-100 border-round border-1 border-red-300">
+      <p class="error-message text-red-700 mb-3">{{ error }}</p>
+      <button pButton pRipple type="button" label="Reintentar" (click)="loadDashboardStats()" class="p-button-sm"></button>
+    </div>
+  }
+
+  <!-- Dashboard Content -->
+  @if (!loading && !error && stats) {
+    <div class="dashboard-content">
+      <!-- Stats Cards -->
+      <div class="grid">
+        <!-- Usuarios Card -->
+        <div class="col-12 md:col-6 lg:col-3">
+          <p-card header="Usuarios" subheader="Total de usuarios registrados" class="h-full">
+            <div class="flex flex-column">
+              <div class="text-3xl font-bold mb-2">{{ stats.usuarios.total | number }}</div>
+              <div class="text-sm text-500">
+                <span>Nuevos (30 días): </span>
+                <span class="font-medium text-green-600">+{{ stats.usuarios.nuevos }}</span>
+              </div>
+            </div>
+          </p-card>
+        </div>
+
+        <!-- Reportes Card -->
+        <div class="col-12 md:col-6 lg:col-3">
+          <p-card header="Reportes" subheader="Total de reportes" class="h-full">
+            <div class="flex flex-column">
+              <div class="text-3xl font-bold mb-2">{{ stats.reportes.total | number }}</div>
+              <div class="text-sm text-500">
+                <span>Nuevos (30 días): </span>
+                <span class="font-medium text-green-600">+{{ stats.reportes.nuevos }}</span>
+              </div>
+            </div>
+          </p-card>
+        </div>
+
+        <!-- Estados de Reportes Card -->
+        <div class="col-12 lg:col-6">
+          <p-card header="Estados de Reportes" class="h-full">
+            <div class="flex flex-column gap-3">
+              @for (status of statuses; track status.key) {
+                <div>
+                  <div class="flex justify-content-between mb-1">
+                    <span class="font-medium">{{ status.label }}</span>
+                    <span class="font-semibold">
+                      {{ stats.reportes.por_estado[status.key] || 0 }}
+                    </span>
+                  </div>
+                  <p-progressBar 
+                    [value]="getStatusPercentage(status.key)"
+                    [style]="{'background-color': getStatusColor(status.key)}">
+                  </p-progressBar>
+                  <div class="text-right text-sm text-500">
+                    {{ getStatusPercentage(status.key) | number:'1.0-1' }}%
+                  </div>
+                </div>
+              }
+            </div>
+          </p-card>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="grid mt-4">
+        <!-- Reportes por Categoría -->
+        <div class="col-12 lg:col-6">
+          <p-card header="Reportes por Categoría" class="h-full">
+            @if (categoryChartData) {
+              <div class="chart-container" style="height: 300px;">
+                <p-chart type="pie" [data]="categoryChartData" [options]="chartOptions"></p-chart>
+              </div>
+            } @else {
+              <p class="text-center p-4">No hay datos de categorías disponibles</p>
+            }
+          </p-card>
+        </div>
+
+        <!-- Reportes por Mes -->
+        <div class="col-12 lg:col-6">
+          <p-card header="Reportes por Mes (Últimos 12 meses)" class="h-full">
+            @if (monthlyChartData) {
+              <div class="chart-container" style="height: 300px;">
+                <p-chart type="bar" [data]="monthlyChartData" [options]="chartOptions"></p-chart>
+              </div>
+            } @else {
+              <p class="text-center p-4">No hay datos mensuales disponibles</p>
+            }
+          </p-card>
+        </div>
+      </div>
+    </div>
+  }
+</div>

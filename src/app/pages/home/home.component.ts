@@ -1,10 +1,10 @@
 import { Reaccion } from './../../interfaces/interacciones.interface';
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { ReportesService } from '../../services/reportes.service';
 import { firstValueFrom } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { CategoriasService } from '../../services/categorias.service';
 import { AuthService } from '../../services/auth.service';
 import { environment } from '../../../environments/environment.development';
 import { InteraccionesService } from '../../services/interacciones.service';
@@ -28,98 +28,74 @@ import { AdminPanelComponent } from '../../components/admin/admin-panel/admin-pa
 })
 export default class HomeComponent implements OnInit {
   listReports: any[] = [];
-
-
-  errorMessage: string = '';  // Variable para almacenar el mensaje de error
+  errorMessage: string = '';
   mostrarFormulario = false;
-
-
-
-
   userName: string = '';
   userId: string = '';
   isAdmin: boolean = false;
- 
   
-  comentariosPorReporte: { [key: number]: string } = {}; // Para el input de comentarios
-  comentariosLista: { [key: number]: Comentario[] } = {}; // Para la lista de comentarios
+  // Comentarios y reacciones
+  comentariosPorReporte: { [key: number]: string } = {};
   reaccionesPorReporte: { [key: number]: Reaccion[] } = {};
-  comentarioRespuestaId: number | null = null;
-  comentariosCounts: { [key: number]: any } = {};
-  comentariosPrincipales: { [key: number]: any[] } = {};
-  comentariosRespuestas: { [key: number]: any[] } = {};
+  comentariosCounts: { [key: number]: { total_comentarios: number, total_reacciones: number } } = {};
   mostrarComentarios: { [key: number]: boolean } = {};
   mostrarRespuestas: { [key: number]: boolean } = {};
+  comentariosPrincipales: { [key: number]: any[] } = {};
+  comentariosRespuestas: { [key: number]: any[] } = {};
   comentarioPadreId: number | null = null;
   comentarioRespuestaTexto: string = '';
   loading = true;
   reaccionesLoading: { [key: number]: boolean } = {};
   comentariosLoading: { [key: number]: boolean } = {};
+  imagesLoading = new Map<number, boolean>();
+  
+  // Variables para paginación
   private pageSize = 5;
   private currentPage = 0;
   private isLoading = false;
   private allReportsLoaded = false;
   private loadedReportIds = new Set<number>();
-  imagesLoading = new Map<number, boolean>();
-  private currentImageIndex = 0;
-  private batchSize = 5;
+  private totalReports = 0;
 
-  selectedImage: string | null = null; // Add this property
+  // Variables para el visor de imágenes
+  selectedImage: string | null = null;
   selectedReporte: any = null;
   nuevoEstado: string = '';
 
   constructor(
-    private srvReports: ReportesService,
-    private srvCategorias: CategoriasService,
+    private reportesService: ReportesService,
     private authService: AuthService,
-    private interaccionesService: InteraccionesService
+    private interaccionesService: InteraccionesService,
+    private router: Router
   ) {}
 
   async ngOnInit() {
     await this.getInitialReports();
-    //await this.getCategorias();
     this.authService.getUser().subscribe(user => {
       if (user) {
         this.userName = user.nombre || '';
         this.userId = user.sub || '';
-        this.isAdmin = user.rol === 'admin'; // Assuming the role is returned from your auth service
-        // Cargar todos los datos iniciales
-        this.cargarDatosIniciales();
+        this.isAdmin = user.rol === 'admin';
       }
     });
     this.setupInfiniteScroll();
   }
 
-  private async cargarDatosIniciales() {
-    // Cargar datos para todos los reportes
-    for (const reporte of this.listReports) {
-      await this.cargarDatosReporteAsync(reporte.id);
-      this.loadedReportIds.add(reporte.id);
-    }
-  }
-
   private async getInitialReports() {
     try {
-      const res: any = await firstValueFrom(this.srvReports.getReports());
-      // Limpiar estados antes de actualizar la lista
-      this.imagesLoading.clear();
-      this.loadedReportIds.clear();
+      this.currentPage = 1;
+      this.loading = true;
+      const res: any = await firstValueFrom(this.reportesService.getReportsWithInteractions({page: this.currentPage}));
       
-      this.listReports = res.data
-        .map((reporte: any) => {
-          reporte.ubicacion = JSON.parse(reporte.ubicacion);
-          reporte.imagen_url = `${environment.urlApiImages}${reporte.imagen_url}`;
-          this.imagesLoading.set(reporte.id, true);
-          return reporte;
-        })
-        .sort((a: any, b: any) =>
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        );
-
-      // Precargar imágenes
-      this.preloadImages();
+      if (res.data && res.data.length > 0) {
+        this.processNewReports(res.data);
+        this.totalReports = res.pagination?.total || 0;
+      }
+      
+      this.loading = false;
     } catch (error) {
       console.error('Error al obtener los reportes:', error);
+      this.loading = false;
     }
   }
 
@@ -137,34 +113,72 @@ export default class HomeComponent implements OnInit {
     });
   }
 
-  private async loadMoreReports() {
+  private async loadMoreReports(): Promise<void> {
     if (this.isLoading || this.allReportsLoaded) return;
 
     this.isLoading = true;
-    const start = (this.currentPage + 1) * this.pageSize;
-    const end = start + this.pageSize;
-    const nextReports = this.listReports.slice(start, end);
+    const nextPage = this.currentPage + 1;
 
-    if (nextReports.length === 0) {
-      this.allReportsLoaded = true;
-      this.isLoading = false;
-      return;
-    }
-
-    // Cargar datos para cada reporte nuevo
-    for (const reporte of nextReports) {
-      if (!this.loadedReportIds.has(reporte.id)) {
-        await this.cargarDatosReporteAsync(reporte.id);
-        this.loadedReportIds.add(reporte.id);
-        // Precargar imagen si es necesario
-        if (!this.imagesLoading.has(reporte.id)) {
-          this.precargarImagen(reporte);
+    try {
+      const res = await firstValueFrom(
+        this.reportesService.getReportsWithInteractions({ page: nextPage })
+      ) as { data: any[] };
+      
+      if (res?.data?.length > 0) {
+        this.processNewReports(res.data);
+        this.currentPage = nextPage;
+        
+        if (this.listReports.length >= this.totalReports || res.data.length === 0) {
+          this.allReportsLoaded = true;
         }
+      } else {
+        this.allReportsLoaded = true;
       }
+    } catch (error) {
+      console.error('Error al cargar más reportes:', error);
+    } finally {
+      this.isLoading = false;
     }
+  }
 
-    this.currentPage++;
-    this.isLoading = false;
+  private processNewReports(reports: any[]): void {
+    const newReports = reports
+      .filter((reporte: any) => !this.loadedReportIds.has(reporte.id))
+      .map((reporte: any) => {
+        console.log(reporte);
+        this.processReportData(reporte);
+        
+        reporte.ubicacion = typeof reporte.ubicacion === 'string' 
+          ? JSON.parse(reporte.ubicacion) 
+          : reporte.ubicacion;
+          
+        reporte.imagen_url = `${reporte.imagen_url}`;
+        this.precargarImagen(reporte);
+        
+        // Asegurarse de que reaccionesPorReporte[reporte.id] sea un array
+        const reacciones = Array.isArray(this.reaccionesPorReporte[reporte.id]) 
+          ? this.reaccionesPorReporte[reporte.id] 
+          : [];
+          
+        this.comentariosCounts[reporte.id] = {
+          total_comentarios: reporte.total_comentarios || 0,
+          total_reacciones: reacciones.reduce((sum: number, r: any) => sum + (r.count || 0), 0)
+        };
+        
+        return reporte;
+      });
+
+    this.listReports = [...this.listReports, ...newReports];
+  }
+
+  private precargarImagen(reporte: any): void {
+    if (!reporte?.id || !reporte?.imagen_url) return;
+    
+    this.imagesLoading.set(reporte.id, true);
+    const img = new Image();
+    img.onload = () => this.imagesLoading.set(reporte.id, false);
+    img.onerror = () => this.imagesLoading.set(reporte.id, false);
+    img.src = reporte.imagen_url;
   }
 
   private async cargarDatosReporteAsync(reporteId: number): Promise<void> {
@@ -173,161 +187,217 @@ export default class HomeComponent implements OnInit {
     }
 
     try {
-      this.reaccionesLoading[reporteId] = true;
+      // Mostrar carga
       this.comentariosLoading[reporteId] = true;
 
-      const [reacciones, comentarios] = await Promise.all([
-        firstValueFrom(this.interaccionesService.getReacciones(reporteId)),
-        firstValueFrom(this.interaccionesService.getComentariosCount(reporteId))
-      ]);
-
-      // Asegurarnos de que los datos se guarden correctamente
-      if (reacciones?.data) {
-        this.reaccionesPorReporte[reporteId] = reacciones.data.map(reaccion => ({
-          ...reaccion,
-          usuarios: reaccion.usuarios?.map(usuario => ({
-            ...usuario,
-            nombre: usuario.nombre || 'Usuario'
-          })) || []
-        }));
+      // Buscar el reporte en la lista actual
+      const reporte = this.listReports.find(r => r.id === reporteId);
+      
+      if (reporte) {
+        this.processReportData(reporte);
+      } else {
+        // Si no está en la lista, lo cargamos individualmente
+        const response = await firstValueFrom(
+          this.reportesService.getReportsWithInteractions({ page: 1, perPage: 1, reporteId })
+        ) as { data: any[] };
+        
+        if (response?.data?.length > 0) {
+          this.processReportData(response.data[0]);
+        }
       }
 
-      if (comentarios?.data) {
-        this.comentariosCounts[reporteId] = comentarios.data;
-      }
-
-      // Marcar como cargado solo si todo fue exitoso
+      // Marcar como cargado
       this.loadedReportIds.add(reporteId);
-
     } catch (error) {
-      console.error(`Error cargando datos para reporte ${reporteId}:`, error);
-      // Remover del set si hubo error para intentar cargar de nuevo después
-      this.loadedReportIds.delete(reporteId);
+      console.error(`Error procesando datos para reporte ${reporteId}:`, error);
     } finally {
-      this.reaccionesLoading[reporteId] = false;
       this.comentariosLoading[reporteId] = false;
     }
   }
 
-  private precargarImagen(reporte: any) {
-    this.imagesLoading.set(reporte.id, true);
-    const img = new Image();
-    img.onload = () => this.imagesLoading.set(reporte.id, false);
-    img.onerror = () => this.imagesLoading.set(reporte.id, false);
-    img.src = reporte.imagen_url;
-  }
-
-  private preloadImages() {
-    // Cargar las primeras 5 imágenes
-    const initialBatch = this.listReports.slice(0, this.batchSize);
-    initialBatch.forEach(reporte => this.precargarImagen(reporte));
-
-    // Programar la carga del siguiente lote cuando se complete el primero
-    setTimeout(() => {
-      const nextBatch = this.listReports.slice(this.batchSize);
-      nextBatch.forEach(reporte => this.precargarImagen(reporte));
-    }, 1000);
-  }
-
-  isImageLoading(reporteId: number): boolean {
-    return this.imagesLoading.get(reporteId) !== false;
-  }
-
-  async getReports() {
-    try {
-      const res: any = await firstValueFrom(this.srvReports.getReports());
-      this.listReports = res.data
-        .map((reporte: any) => {
-          reporte.ubicacion = JSON.parse(reporte.ubicacion);
-          //reporte.imagen_url = `http://127.0.0.1:8000${reporte.imagen_url}`; 
-          reporte.imagen_url = `${environment.urlApiImages}${reporte.imagen_url}`;
-          console.log('reporte.imagen_url',environment.urlApiImages + reporte.imagen_url);
-          return reporte;
-        })
-        .sort(
-          (a: any, b: any) =>
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        );
-    } catch (error) {
-      console.error('Error al obtener los reportes:', error);
+  private processReportData(reporte: any) {
+    // Asegurar que la ubicación sea un objeto
+    if (typeof reporte.ubicacion === 'string') {
+      reporte.ubicacion = JSON.parse(reporte.ubicacion);
     }
+    
+    // Construir URL de la imagen
+    reporte.imagen_url = `${environment.urlApiImages}${reporte.imagen_url}`;
+    
+    // Precargar imagen
+    this.precargarImagen(reporte);
+    
+    // Inicializar array de reacciones
+    this.reaccionesPorReporte[reporte.id] = [];
+    
+    // Procesar reacciones si vienen del servidor
+    if (reporte.reacciones?.contadores) {
+      // Convertir el objeto de contadores a un array de reacciones
+      Object.entries<number>(reporte.reacciones.contadores as Record<string, number>).forEach(([tipo, count]) => {
+        if (count > 0) {
+          this.reaccionesPorReporte[reporte.id].push({
+            tipo: Number(tipo),
+            count: count,
+            usuarios: reporte.reacciones.usuarios_por_tipo?.[tipo] || []
+          });
+        }
+      });
+    }
+    
+    // Inicializar contadores
+    this.comentariosCounts[reporte.id] = {
+      total_comentarios: reporte.total_comentarios || 0,
+      total_reacciones: Object.values(reporte.reacciones?.contadores || {}).reduce(
+        (sum: number, count: any) => sum + Number(count), 
+        0
+      )
+    };
+    
+    // Procesar comentarios si vienen del servidor
+    if (reporte.comentarios && Array.isArray(reporte.comentarios)) {
+      this.comentariosPrincipales[reporte.id] = reporte.comentarios.map((comentario: any) => ({
+        ...comentario,
+        // Asegurarse de que las respuestas estén inicializadas
+        respuestas: comentario.respuestas || []
+      }));
+    }
+    
+    // Marcar como cargado
+    this.loadedReportIds.add(reporte.id);
   }
 
-
-
-
-
-  onLogout() {
-    this.authService.logout();
-  }
-
-  // Helper method to convert the reactions object to an array
-  getReaccionesArray(reporteId: number): Reaccion[] {
-    return this.reaccionesPorReporte[reporteId] || [];
-  }
-
-  cargarReaccionesParaReporte(reporteId: number) {
-    return this.cargarDatosReporteAsync(reporteId);
-  }
-
-  toggleReaccion(reporteId: number, tipoReaccion: number) {
+  async toggleReaccion(reporteId: number, tipoReaccion: number): Promise<void> {
     if (!this.userId) {
       console.error('Usuario no autenticado');
       return;
     }
 
-    const usuarioId = Number(this.userId);
-    const reaccionActual = this.reaccionesPorReporte[reporteId]?.find(
-      r => r.tipo === tipoReaccion && r.usuarios.some(u => u.id === usuarioId)
+    // Guardar el estado actual para poder revertir si hay error
+    const estadoAnterior = {
+      reacciones: { ...this.reaccionesPorReporte },
+      contadores: { ...this.comentariosCounts }
+    };
+
+    // Actualizar la interfaz de usuario inmediatamente
+    this.actualizarEstadoLocalReacciones(reporteId, tipoReaccion);
+
+    try {
+      // Llamar a la API en segundo plano
+      await firstValueFrom(
+        this.interaccionesService.toggleReaccion(reporteId, tipoReaccion, Number(this.userId))
+      );
+    } catch (error) {
+      console.error('Error al actualizar la reacción:', error);
+      
+      // Revertir los cambios locales si hay error
+      this.reaccionesPorReporte = estadoAnterior.reacciones;
+      this.comentariosCounts = estadoAnterior.contadores;
+      
+      // Forzar la detección de cambios
+      this.reaccionesPorReporte = { ...this.reaccionesPorReporte };
+      this.comentariosCounts = { ...this.comentariosCounts };
+      
+      // Mostrar mensaje de error al usuario
+      this.errorMessage = 'Error al actualizar la reacción. Por favor, inténtalo de nuevo.';
+    }
+  }
+
+  /**
+   * Actualiza el estado local de las reacciones sin hacer llamadas a la API
+   */
+  private actualizarEstadoLocalReacciones(reporteId: number, tipoReaccion: number): void {
+    // Obtener reacciones actuales o inicializar array si no existe
+    const currentReactions = [...(this.reaccionesPorReporte[reporteId] || [])];
+    const userId = Number(this.userId);
+    
+    // Buscar si el usuario ya tiene una reacción
+    const userReactionIndex = currentReactions.findIndex(r => 
+      r.usuarios.some((u: any) => u.id === userId)
     );
-
-    // Copia de las reacciones actuales
-    let reacciones = [...(this.reaccionesPorReporte[reporteId] || [])];
-
-    // Si ya existe esta reacción del usuario, solo la quitamos
-    if (reaccionActual) {
-      reaccionActual.usuarios = reaccionActual.usuarios.filter(u => u.id !== usuarioId);
-      reaccionActual.count = Math.max(0, reaccionActual.count - 1);
-      reacciones = reacciones.filter(r => r.count > 0);
-    } else {
-      // Eliminar cualquier otra reacción del usuario
-      reacciones = reacciones.map(r => {
-        if (r.usuarios.some(u => u.id === usuarioId)) {
-          return {
-            ...r,
-            usuarios: r.usuarios.filter(u => u.id !== usuarioId),
-            count: r.count - 1
-          };
-        }
-        return r;
-      }).filter(r => r.count > 0);
-
-      // Agregar la nueva reacción
-      const reaccionExistente = reacciones.find(r => r.tipo === tipoReaccion);
-      if (reaccionExistente) {
-        reaccionExistente.usuarios.push({ id: usuarioId, nombre: this.userName });
-        reaccionExistente.count++;
+    
+    // Si el usuario ya tiene una reacción de este tipo, la quitamos
+    if (userReactionIndex !== -1 && currentReactions[userReactionIndex].tipo === tipoReaccion) {
+      const reaccionUsuario = currentReactions[userReactionIndex];
+      reaccionUsuario.count--;
+      reaccionUsuario.usuarios = reaccionUsuario.usuarios.filter((u: any) => u.id !== userId);
+      
+      // Si no quedan más reacciones de este tipo, la eliminamos
+      if (reaccionUsuario.count === 0) {
+        currentReactions.splice(userReactionIndex, 1);
+      }
+    } 
+    // Si el usuario tiene otra reacción, la quitamos y agregamos la nueva
+    else if (userReactionIndex !== -1) {
+      const otraReaccion = currentReactions[userReactionIndex];
+      otraReaccion.count--;
+      otraReaccion.usuarios = otraReaccion.usuarios.filter((u: any) => u.id !== userId);
+      
+      // Si no quedan más reacciones de este tipo, la eliminamos
+      if (otraReaccion.count === 0) {
+        currentReactions.splice(userReactionIndex, 1);
+      }
+      
+      // Buscar si ya existe una reacción del nuevo tipo
+      const nuevaReaccionIndex = currentReactions.findIndex(r => r.tipo === tipoReaccion);
+      
+      if (nuevaReaccionIndex !== -1) {
+        // Si ya existe, incrementar el contador
+        currentReactions[nuevaReaccionIndex].count++;
+        currentReactions[nuevaReaccionIndex].usuarios.push({ 
+          id: userId, 
+          nombre: this.userName 
+        });
       } else {
-        reacciones.push({
+        // Si no existe, crear una nueva reacción
+        currentReactions.push({
           tipo: tipoReaccion,
           count: 1,
-          usuarios: [{ id: usuarioId, nombre: this.userName }]
+          usuarios: [{ id: userId, nombre: this.userName }]
+        });
+      }
+    } 
+    // Si el usuario no tiene ninguna reacción, agregamos la nueva
+    else {
+      const reaccionExistenteIndex = currentReactions.findIndex(r => r.tipo === tipoReaccion);
+      
+      if (reaccionExistenteIndex !== -1) {
+        // Si ya existe una reacción de este tipo, incrementar el contador
+        currentReactions[reaccionExistenteIndex].count++;
+        currentReactions[reaccionExistenteIndex].usuarios.push({ 
+          id: userId, 
+          nombre: this.userName 
+        });
+      } else {
+        // Si no existe, crear una nueva reacción
+        currentReactions.push({
+          tipo: tipoReaccion,
+          count: 1,
+          usuarios: [{ id: userId, nombre: this.userName }]
         });
       }
     }
+    
+    // Actualizar el estado con las nuevas reacciones
+    this.reaccionesPorReporte[reporteId] = currentReactions;
+    
+    // Actualizar el contador total de reacciones
+    if (this.comentariosCounts[reporteId]) {
+      this.comentariosCounts[reporteId].total_reacciones = 
+        currentReactions.reduce((sum, r) => sum + r.count, 0);
+    } else {
+      this.comentariosCounts[reporteId] = {
+        total_comentarios: 0,
+        total_reacciones: currentReactions.reduce((sum, r) => sum + r.count, 0)
+      };
+    }
+    
+    // Forzar la detección de cambios
+    this.reaccionesPorReporte = { ...this.reaccionesPorReporte };
+    this.comentariosCounts = { ...this.comentariosCounts };
+  }
 
-    // Actualizar el estado inmediatamente
-    this.reaccionesPorReporte[reporteId] = reacciones;
-
-    // Llamada al servidor sin esperar respuesta para UI más fluida
-    this.interaccionesService.toggleReaccion(reporteId, tipoReaccion, usuarioId)
-      .subscribe({
-        error: (error) => {
-          console.error('Error al actualizar reacción:', error);
-          // Solo recargar en caso de error
-          this.cargarReaccionesParaReporte(reporteId);
-        }
-      });
+  getReaccionesArray(reporteId: number): Reaccion[] {
+    return this.reaccionesPorReporte[reporteId] || [];
   }
 
   getReaccionesPorTipo(reporteId: number, tipoReaccion: number): number {
@@ -335,14 +405,7 @@ export default class HomeComponent implements OnInit {
     return reaccion?.count || 0;
   }
 
-  getReaccionEmoji(tipo: number): string {
-    switch(tipo) {
-      case 1: return '👍';
-      case 2: return '❤️';
-      case 3: return '😠';
-      default: return '👍';
-    }
-  }
+
 
   haReaccionado(reporteId: number, tipo: number): boolean {
     const reacciones = this.reaccionesPorReporte[reporteId] || [];
@@ -352,72 +415,126 @@ export default class HomeComponent implements OnInit {
     );
   }
 
-  enviarComentario(reporteId: number) {
-    const contenido = this.comentarioRespuestaTexto || this.comentariosPorReporte[reporteId];
-    if (!contenido?.trim() || !this.userId) return;
 
-    this.interaccionesService.crearComentario(
-      reporteId,
-      contenido,
-      parseInt(this.userId),
-      this.comentarioPadreId || undefined
-    ).subscribe({
-      next: async () => {
-        // Limpiar estados
-        this.comentariosPorReporte[reporteId] = '';
-        this.comentarioRespuestaTexto = '';
-        const padreId = this.comentarioPadreId;
-        this.comentarioPadreId = null;
-
-        // Actualizar inmediatamente los contadores y comentarios
-        try {
-          // Actualizar el contador de comentarios
-          const countResponse = await firstValueFrom(
-            this.interaccionesService.getComentariosCount(reporteId)
-          );
-          this.comentariosCounts[reporteId] = countResponse.data;
-
-          // Si los comentarios están visibles, actualizar la lista
-          if (this.mostrarComentarios[reporteId]) {
-            const comentariosResponse = await firstValueFrom(
-              this.interaccionesService.getComentariosPrincipales(reporteId)
-            );
-            this.comentariosPrincipales[reporteId] = comentariosResponse.data;
-
-            // Si estábamos respondiendo a un comentario, actualizar sus respuestas
-            if (padreId && this.mostrarRespuestas[padreId]) {
-              const respuestasResponse = await firstValueFrom(
-                this.interaccionesService.getRespuestasComentario(padreId)
-              );
-              this.comentariosRespuestas[padreId] = respuestasResponse.data;
-            }
-          }
-        } catch (error) {
-          console.error('Error al actualizar comentarios:', error);
-        }
-      },
-      error: (error) => {
-        console.error('Error al crear comentario:', error);
-        this.errorMessage = 'Error al crear el comentario. Por favor, intenta de nuevo.';
-      }
-    });
-  }
-
-  responderComentario(reporteId: number, comentarioId: number) {
-    this.comentarioPadreId = comentarioId;
-    this.comentarioRespuestaTexto = '';
-  }
 
   cancelarRespuesta() {
     this.comentarioPadreId = null;
     this.comentarioRespuestaTexto = '';
   }
 
+  enviarComentario(reporteId: number) {
+    const contenido = this.comentarioRespuestaTexto || this.comentariosPorReporte[reporteId];
+    if (!contenido?.trim() || !this.userId) return;
+
+    // Mostrar loading
+    this.comentariosLoading[reporteId] = true;
+    const padreId = this.comentarioPadreId;
+
+    console.log('Enviando comentario:', { reporteId, contenido, padreId, userId: this.userId });
+
+    this.interaccionesService.crearComentario(
+      reporteId,
+      contenido,
+      parseInt(this.userId),
+      padreId || undefined
+    ).subscribe({
+      next: (response: any) => {
+        console.log('Respuesta del servidor:', response);
+        try {
+          // Obtener el comentario de la respuesta
+          const nuevoComentario = response?.data || response?.comentario || response;
+          
+          if (!nuevoComentario) {
+            console.error('No se recibió el comentario del servidor');
+            return;
+          }
+          
+          // Asegurarse de que el comentario tenga la estructura correcta
+          const comentarioActualizado = {
+            id: nuevoComentario.id || Date.now(),
+            contenido: nuevoComentario.contenido || contenido,
+            created_at: nuevoComentario.created_at || new Date().toISOString(),
+            usuario: {
+              id: parseInt(this.userId),
+              nombre: this.userName,
+              email: ''
+            },
+            reporte_id: reporteId,
+            padre_id: padreId || null,
+            respuestas: [] // Asegurar que el array de respuestas esté inicializado
+          };
+
+          // Asegurarse de que la sección de comentarios esté abierta
+          this.mostrarComentarios[reporteId] = true;
+
+          if (padreId) {
+            // Es una respuesta a un comentario existente
+            this.mostrarRespuestas[padreId] = true;
+            
+            // Actualizar las respuestas localmente
+            const comentarioPadre = this.comentariosPrincipales[reporteId]?.find(c => c.id === padreId);
+            if (comentarioPadre) {
+              // Inicializar el array de respuestas si no existe
+              if (!comentarioPadre.respuestas) {
+                comentarioPadre.respuestas = [];
+              }
+              // Agregar la nueva respuesta al inicio del array
+              comentarioPadre.respuestas = [comentarioActualizado, ...comentarioPadre.respuestas];
+              comentarioPadre.respuestas_count = (comentarioPadre.respuestas_count || 0) + 1;
+            }
+
+            // Limpiar el campo de respuesta
+            this.comentarioRespuestaTexto = '';
+            this.comentarioPadreId = null;
+          } else {
+            // Es un comentario principal
+            if (!this.comentariosPrincipales[reporteId]) {
+              this.comentariosPrincipales[reporteId] = [];
+            }
+            
+            // Crear un nuevo array con el nuevo comentario
+            const nuevosComentarios = [comentarioActualizado, ...this.comentariosPrincipales[reporteId] || []];
+            
+            // Actualizar el objeto de comentarios principales de manera inmutable
+            this.comentariosPrincipales = {
+              ...this.comentariosPrincipales,
+              [reporteId]: nuevosComentarios
+            };
+
+            // Limpiar el campo de comentario
+            this.comentariosPorReporte[reporteId] = '';
+          }
+          
+          // Actualizar el contador de comentarios
+          if (this.comentariosCounts[reporteId]) {
+            this.comentariosCounts[reporteId].total_comentarios++;
+          } else {
+            this.comentariosCounts[reporteId] = { total_comentarios: 1, total_reacciones: 0 };
+          }
+          
+          // Forzar la detección de cambios
+          this.comentariosPrincipales = { ...this.comentariosPrincipales };
+          this.comentariosRespuestas = { ...this.comentariosRespuestas };
+          this.comentariosCounts = { ...this.comentariosCounts };
+          
+        } catch (error) {
+          console.error('Error al procesar la respuesta del servidor:', error);
+        }
+      },
+      error: (error) => {
+        console.error('Error al crear comentario:', error);
+        this.errorMessage = 'Error al crear el comentario. Por favor, intenta de nuevo.';
+      },
+      complete: () => {
+        this.comentariosLoading[reporteId] = false;
+      }
+    });
+}
+
   eliminarComentario(reporteId: number, comentarioId: number) {
     this.interaccionesService.eliminarComentario(comentarioId).subscribe({
       next: () => {
         // Actualizar contadores y comentarios principales
-        this.cargarContadoresComentarios();
         if (this.mostrarComentarios[reporteId]) {
           this.cargarComentariosPrincipales(reporteId);
         }
@@ -426,50 +543,76 @@ export default class HomeComponent implements OnInit {
     });
   }
 
-  cargarContadoresComentarios() {
-    this.listReports.forEach(reporte => {
-      this.interaccionesService.getComentariosCount(reporte.id)
-        .subscribe(response => {
-          this.comentariosCounts[reporte.id] = response.data;
-        });
-    });
-  }
+
 
   toggleComentarios(reporteId: number) {
     this.mostrarComentarios[reporteId] = !this.mostrarComentarios[reporteId];
-    if (this.mostrarComentarios[reporteId]) {
+    if (this.mostrarComentarios[reporteId] && !this.comentariosPrincipales[reporteId]) {
       this.cargarComentariosPrincipales(reporteId);
     }
   }
 
-  cargarComentariosPrincipales(reporteId: number) {
-    this.interaccionesService.getComentariosPrincipales(reporteId)
-      .subscribe(response => {
-        this.comentariosPrincipales[reporteId] = response.data;
-      });
-  }
-
-  toggleRespuestas(reporteId: number, comentarioId: number) {
-    this.mostrarRespuestas[comentarioId] = !this.mostrarRespuestas[comentarioId];
-    if (this.mostrarRespuestas[comentarioId]) {
-      this.cargarRespuestas(comentarioId);
-    }
-  }
-
-  cargarRespuestas(comentarioId: number) {
-    // Añadir console.log para depuración
-    console.log('Cargando respuestas para comentario:', comentarioId);
+  /**
+   * Prepara el formulario para responder a un comentario
+   * @param comentarioId ID del comentario al que se está respondiendo
+   */
+  responderComentario(comentario: any) {
+    this.comentarioPadreId = comentario.id;
+    this.comentarioRespuestaTexto = '';
     
-    this.interaccionesService.getRespuestasComentario(comentarioId).subscribe({
-      next: (response) => {
-        console.log('Respuestas recibidas:', response);
-        this.comentariosRespuestas[comentarioId] = response.data;
+    // Asegurarse de que las respuestas estén visibles
+    if (!this.mostrarRespuestas[comentario.id]) {
+      this.mostrarRespuestas[comentario.id] = true;
+    }
+    
+    // Desplazarse al campo de respuesta después de un breve retraso
+    setTimeout(() => {
+      const elemento = document.querySelector(`#respuesta-${comentario.id}`);
+      if (elemento) {
+        elemento.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+        const input = elemento.querySelector('input');
+        if (input) {
+          input.focus();
+        }
+      }
+    }, 100);
+  }
+
+  cargarComentariosPrincipales(reporteId: number) {
+    this.comentariosLoading[reporteId] = true;
+    
+    // Usamos el endpoint actualizado que ya incluye las respuestas anidadas
+    this.reportesService.getReportsWithInteractions({ reporteId }).subscribe({
+      next: (response: any) => {
+        if (response.data && response.data.length > 0) {
+          const reporte = response.data[0];
+          if (reporte.comentarios && Array.isArray(reporte.comentarios)) {
+            // Mapear los comentarios para asegurar que las respuestas estén inicializadas
+            this.comentariosPrincipales[reporteId] = reporte.comentarios.map((comentario: any) => ({
+              ...comentario,
+              respuestas: comentario.respuestas || []
+            }));
+            
+            // Actualizar el contador de comentarios
+            if (this.comentariosCounts[reporteId]) {
+              this.comentariosCounts[reporteId].total_comentarios = reporte.total_comentarios || 0;
+            }
+          }
+        }
       },
       error: (error) => {
-        console.error('Error al cargar respuestas:', error);
+        console.error('Error al cargar comentarios:', error);
+      },
+      complete: () => {
+        this.comentariosLoading[reporteId] = false;
       }
     });
   }
+
+
 
   // Agregar este método helper
   getComentarioTexto(reporteId: number): string {
@@ -510,12 +653,12 @@ export default class HomeComponent implements OnInit {
     this.nuevoEstado = '';
   }
 
-  actualizarEstado() {
+  actualizarEstado(): void {
     if (!this.selectedReporte || !this.nuevoEstado) return;
 
-    this.srvReports.actualizarestadoReporte(this.selectedReporte.id, this.nuevoEstado)
+    this.reportesService.actualizarestadoReporte(this.selectedReporte.id, this.nuevoEstado)
       .subscribe({
-        next: (response) => {
+        next: (response: any) => {
           // Update the local state
           this.selectedReporte.estado = this.nuevoEstado;
           // Close the modal
@@ -523,8 +666,8 @@ export default class HomeComponent implements OnInit {
           // Optional: Show success message
           console.log('Estado actualizado con éxito');
         },
-        error: (error) => {
-          console.error('Error al actualizar estado:', error);
+        error: (error: any) => {
+          console.error('Error al actualizar el estado:', error);
           // Optional: Show error message
         }
       });
@@ -542,16 +685,15 @@ export default class HomeComponent implements OnInit {
         total += reaccion.usuarios.length;
       }
     });
-    
     return total;
   }
 
+  /**
+   * Obtiene el nombre del primer usuario que reaccionó
+   */
   getNombrePrimerUsuarioReaccion(reporteId: number): string {
-    if (!this.reaccionesPorReporte[reporteId]) {
-      return 'Usuario';
-    }
+    if (!this.reaccionesPorReporte[reporteId]) return 'Usuario';
     
-    // Buscar el primer usuario en cualquier tipo de reacción
     for (const reaccion of this.reaccionesPorReporte[reporteId]) {
       if (reaccion.usuarios && reaccion.usuarios.length > 0) {
         return reaccion.usuarios[0].nombre || 'Usuario';
@@ -560,5 +702,36 @@ export default class HomeComponent implements OnInit {
     
     return 'Usuario';
   }
-  
+
+  toggleRespuestas(comentarioId: number, reporteId: number) {
+    // Si el comentario no está en el mapa, lo inicializamos
+    if (this.mostrarRespuestas[comentarioId] === undefined) {
+      this.mostrarRespuestas[comentarioId] = false;
+    }
+    
+    // Cambiamos el estado de visibilidad
+    this.mostrarRespuestas[comentarioId] = !this.mostrarRespuestas[comentarioId];
+    
+    // No necesitamos cargar las respuestas ya que vienen con los comentarios
+    // Solo asegurémonos de que el comentario tenga sus respuestas
+    if (this.comentariosPrincipales[reporteId]) {
+      const comentario = this.comentariosPrincipales[reporteId].find((c: any) => c.id === comentarioId);
+      if (comentario && !comentario.respuestas) {
+        comentario.respuestas = [];
+      }
+    }
+  }
+
+  /**
+   * Carga las respuestas de un comentario específico
+   * @param comentarioId ID del comentario padre
+   */
+  cargarRespuestas(comentarioId: number, reporteId: number) {
+    // No necesitamos este método ya que las respuestas vienen con los comentarios
+    // Solo marcamos que las respuestas están visibles
+    this.mostrarRespuestas[comentarioId] = true;
+    
+    // Forzar la actualización de la vista
+    this.comentariosPrincipales = { ...this.comentariosPrincipales };
+  }
 }

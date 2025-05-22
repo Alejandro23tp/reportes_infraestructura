@@ -17,6 +17,21 @@ export class ReportesService {
     return this.http.get<any>(url);
   }
 
+  getReportsWithInteractions(options: { page?: number; perPage?: number; reporteId?: number } = {}) {
+    let url = `${this.environment}reportes/con-interacciones`;
+    const params = new URLSearchParams();
+    
+    if (options.page) params.append('page', options.page.toString());
+    if (options.perPage) params.append('per_page', options.perPage.toString());
+    if (options.reporteId) params.append('reporte_id', options.reporteId.toString());
+    
+    if (params.toString()) {
+      url += `?${params.toString()}`;
+    }
+    
+    return this.http.get<any>(url);
+  }
+
   crearReporte(formData: FormData): Observable<any> {
       return this.http.post(`${environment.urlApi}reportes/crear`, formData)
         .pipe(
