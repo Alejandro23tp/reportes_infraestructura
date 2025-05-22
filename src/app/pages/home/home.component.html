@@ -72,7 +72,7 @@
                   <div class="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 shadow-sm"></div>
                   <div>
                     <h3 class="font-bold text-base text-gray-900 dark:text-white tracking-tight">
-                      {{ reporte.usuario.name }}
+                      {{ reporte.usuario.nombre || 'Usuario' }}
                       <span class="text-xs font-normal text-gray-500 dark:text-gray-400 ml-2">{{ reporte.created_at | date:'medium' }}</span>
                     </h3>
                   </div>

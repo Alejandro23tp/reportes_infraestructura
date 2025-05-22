@@ -145,7 +145,7 @@ export default class HomeComponent implements OnInit {
     const newReports = reports
       .filter((reporte: any) => !this.loadedReportIds.has(reporte.id))
       .map((reporte: any) => {
-        console.log(reporte);
+        //console.log(reporte);
         this.processReportData(reporte);
         
         reporte.ubicacion = typeof reporte.ubicacion === 'string' 
@@ -631,8 +631,69 @@ export default class HomeComponent implements OnInit {
     this.mostrarFormulario = show;
   }
 
-  handleReporteCreado(reporte: any) {
-    this.getInitialReports();
+  async handleReporteCreado(reporte: any) {
+    try {
+      // Get the complete report data with interactions
+      const reporteCompleto: any = await firstValueFrom(
+        this.reportesService.getReportsWithInteractions({ reporteId: reporte.id })
+      );
+
+      // Get the first report from the data array
+      const nuevoReporte = reporteCompleto?.data?.[0] || reporte;
+
+      // Make sure the report has the expected structure
+      const reporteProcesado = {
+        ...nuevoReporte,
+        // Ensure the user object exists with the current user's information
+        usuario: nuevoReporte.usuario || {
+          id: this.userId,
+          nombre: this.userName || 'Usuario',
+          email: '',
+          cedula: ''
+        },
+        // Ensure the created_at property exists
+        created_at: nuevoReporte.created_at || new Date().toISOString(),
+        // Ensure the description property exists
+        descripcion: nuevoReporte.descripcion || '',
+        // Ensure the image_url property exists
+        imagen_url: nuevoReporte.imagen_url ? `${nuevoReporte.imagen_url}` : ''
+      };
+
+      // Process the report data (handles reactions, comments, etc.)
+      this.processReportData(reporteProcesado);
+      
+      // Preload the image
+      this.precargarImagen(reporteProcesado);
+      
+      // Add the new report to the beginning of the list
+      this.listReports = [reporteProcesado, ...this.listReports];
+      
+      // Update the total reports counter
+      this.totalReports++;
+    } catch (error) {
+      console.error('Error al obtener los datos del reporte:', error);
+      // In case of error, create a basic report with the available information
+      const reporteBasico = {
+        ...reporte,
+        usuario: {
+          id: this.userId,
+          nombre: this.userName || 'Usuario',
+          email: '',
+          cedula: ''
+        },
+        created_at: reporte.created_at || new Date().toISOString(),
+        descripcion: reporte.descripcion || '',
+        imagen_url: reporte.imagen_url ? `${environment.urlApiImages}${reporte.imagen_url}` : '',
+        reacciones: { contadores: [], usuarios_por_tipo: [], usuario_ha_reaccionado: false, tipo_reaccion_usuario: null },
+        total_comentarios: 0,
+        comentarios: []
+      };
+      
+      this.processReportData(reporteBasico);
+      this.precargarImagen(reporteBasico);
+      this.listReports = [reporteBasico, ...this.listReports];
+      this.totalReports++;
+    }
   }
 
   openImageViewer(imageUrl: string) { // Add this method
