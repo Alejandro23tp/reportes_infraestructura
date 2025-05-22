@@ -11,7 +11,6 @@ import { InteraccionesService } from '../../services/interacciones.service';
 import { Comentario } from '../../interfaces/interacciones.interface';
 import { SkeletonLoaderComponent } from '../../components/skeleton-loader/skeleton-loader.component';
 import { ReporteFormModalComponent } from '../../components/reportes/reporte-form-modal/reporte-form-modal.component';
-import { AdminPanelComponent } from '../../components/admin/admin-panel/admin-panel.component';
 
 @Component({
   selector: 'app-home',
@@ -21,7 +20,6 @@ import { AdminPanelComponent } from '../../components/admin/admin-panel/admin-pa
     FormsModule, 
     SkeletonLoaderComponent,
     ReporteFormModalComponent,
-    AdminPanelComponent
   ],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss',

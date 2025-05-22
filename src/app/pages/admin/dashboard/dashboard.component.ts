@@ -100,9 +100,94 @@ export class DashboardComponent implements OnInit {
     });
   }
 
+  // Método para determinar el tipo de gráfico mensual
+  getMonthlyChartType(): 'bar' | 'line' {
+    if (!this.stats || !this.stats.reportes.por_mes) {
+      return 'bar';
+    }
+    
+    const monthsWithData = this.stats.reportes.por_mes.filter(m => m.total > 0).length;
+    return monthsWithData <= 2 ? 'line' : 'bar';
+  }
+  
+  // Método para obtener las opciones del gráfico mensual
+  getMonthlyChartOptions(): any {
+    const isDarkMode = document.documentElement.classList.contains('dark');
+    const textColor = isDarkMode ? '#e5e7eb' : '#374151';
+    const gridColor = isDarkMode ? 'rgba(75, 85, 99, 0.2)' : 'rgba(209, 213, 219, 0.5)';
+    const axisColor = isDarkMode ? '#9ca3af' : '#6b7280';
+    
+    const isLineChart = this.getMonthlyChartType() === 'line';
+    
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: {
+            font: {
+              size: 12
+            },
+            color: textColor,
+            usePointStyle: true,
+            padding: 16
+          }
+        },
+        tooltip: {
+          enabled: true,
+          backgroundColor: 'rgba(17, 24, 39, 0.8)',
+          titleColor: '#ffffff',
+          bodyColor: '#ffffff',
+          padding: 10,
+          cornerRadius: 6
+        }
+      },
+      scales: {
+        x: {
+          grid: {
+            display: false
+          },
+          ticks: {
+            color: axisColor
+          }
+        },
+        y: {
+          beginAtZero: true,
+          grid: {
+            color: gridColor
+          },
+          ticks: {
+            stepSize: 1,
+            color: axisColor
+          }
+        }
+      },
+      elements: {
+        line: {
+          tension: 0.4,
+          borderWidth: 3,
+          fill: isLineChart
+        },
+        point: {
+          radius: isLineChart ? 5 : 0,
+          hoverRadius: isLineChart ? 7 : 0
+        },
+        bar: {
+          borderWidth: 0,
+          borderRadius: 4,
+          maxBarThickness: 40
+        }
+      },
+      barPercentage: 0.5,
+      categoryPercentage: 0.7
+    };
+  }
+  
+  // Modificar el método prepareChartData para mejorar los datos del gráfico mensual
   private prepareChartData(): void {
     if (!this.stats) return;
-
+  
     // Prepare category chart data
     if (this.stats.reportes.por_categoria?.length > 0) {
       this.categoryChartData = {
@@ -115,17 +200,24 @@ export class DashboardComponent implements OnInit {
         }]
       };
     }
-
+  
     // Prepare monthly chart data
     if (this.stats.reportes.por_mes?.length > 0) {
+      const isLineChart = this.stats.reportes.por_mes.filter(m => m.total > 0).length <= 2;
+      
       this.monthlyChartData = {
         labels: this.stats.reportes.por_mes.map(m => `${m.mes}/${m.año}`),
         datasets: [{
           label: 'Reportes',
           data: this.stats.reportes.por_mes.map(m => m.total),
-          backgroundColor: '#2196F3',
+          backgroundColor: isLineChart ? 'rgba(33, 150, 243, 0.2)' : '#2196F3',
           borderColor: '#1E88E5',
-          borderWidth: 1
+          borderWidth: isLineChart ? 3 : 1,
+          pointBackgroundColor: '#1E88E5',
+          pointBorderColor: '#fff',
+          pointHoverBackgroundColor: '#fff',
+          pointHoverBorderColor: '#1E88E5',
+          fill: isLineChart
         }]
       };
     }
@@ -149,4 +241,71 @@ export class DashboardComponent implements OnInit {
     };
     return colors[status];
   }
+
+  
+// Añade o actualiza esta propiedad en tu clase
+categoryChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      display: true,
+      position: 'right',
+      align: 'center',
+      labels: {
+        boxWidth: 15,
+        padding: 12,
+        font: {
+          size: 13,
+          weight: 'bold'
+        },
+        usePointStyle: true,
+        pointStyle: 'circle'
+      }
+    },
+    tooltip: {
+      enabled: true,
+      backgroundColor: 'rgba(17, 24, 39, 0.8)',
+      titleColor: '#ffffff',
+      bodyColor: '#ffffff',
+      padding: 10,
+      cornerRadius: 6,
+      displayColors: true
+    },
+    datalabels: {
+      display: false
+    }
+  },
+  cutout: '0%',
+  radius: '80%',
+  layout: {
+    padding: {
+      top: 20,
+      bottom: 20,
+      left: 0,
+      right: 20
+    }
+  },
+  scales: {
+    x: {
+      display: false,
+      grid: {
+        display: false
+      },
+      ticks: {
+        display: false
+      }
+    },
+    y: {
+      display: false,
+      grid: {
+        display: false
+      },
+      ticks: {
+        display: false
+      }
+    }
+  }
+};
 }
+
