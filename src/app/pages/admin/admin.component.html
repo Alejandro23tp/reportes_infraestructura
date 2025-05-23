@@ -1,0 +1,101 @@
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-6 pt-16">
+  <div class="max-w-7xl mx-auto">
+    <h1 class="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white mb-6 flex items-center mt-1 md:mt-12">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 mr-3 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+        <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z"/>
+      </svg>
+      Panel de Administración
+    </h1>
+    
+    <!-- Menú de pestañas mejorado -->
+    <div class="mb-6 bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
+      <div class="w-full">
+        <div class="flex justify-center">
+          <div class="flex overflow-x-auto hide-scrollbar w-full md:w-auto">
+        @for (item of items; track item.label; let i = $index) {
+          <button 
+            (click)="setActiveItem(item)"
+            class="flex-shrink-0 min-w-[120px] py-3 sm:py-4 px-4 text-center transition-all duration-200 relative focus:outline-none group"
+            [class.text-blue-600]="activeItem === item"
+            [class.text-gray-600]="activeItem !== item"
+            [class.dark:text-blue-400]="activeItem === item"
+            [class.dark:text-gray-400]="activeItem !== item"
+            [class.font-medium]="activeItem === item"
+          >
+            <div class="flex flex-col items-center justify-center space-y-1 sm:space-y-2">
+              <i [class]="item.icon + ' text-lg sm:text-xl'" 
+                 [ngClass]="{'text-blue-500 dark:text-blue-400': activeItem === item, 
+                            'text-gray-500 dark:text-gray-500': activeItem !== item}"></i>
+              <span class="text-xs sm:text-sm">{{ item.label }}</span>
+            </div>
+            
+            <!-- Indicador activo animado -->
+            <div 
+              class="absolute bottom-0 left-0 w-full h-[3px] bg-blue-500 transform transition-transform duration-300"
+              [ngClass]="{'scale-x-100': activeItem === item, 'scale-x-0': activeItem !== item}"
+            ></div>
+            
+            <!-- Efecto hover -->
+            <div 
+              class="absolute inset-0 bg-blue-50 dark:bg-blue-900/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+              [ngClass]="{'opacity-100': activeItem === item}"
+            ></div>
+          </button>
+        }
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Contenido dinámico basado en la pestaña activa -->
+    <div class="content-container transition-all duration-300">
+      @if (activeItem === items[0]) {
+        <!-- Dashboard -->
+        <div class="dashboard-content">
+          <app-dashboard></app-dashboard>
+        </div>
+      } @else if (activeItem === items[1]) {
+        <!-- Gestión de Usuarios -->
+        <div class="usuarios-content">
+          <app-usuarios></app-usuarios>
+        </div>
+      } @else if (activeItem === items[2]) {
+        <!-- Gestión de Reportes -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 transition-all">
+          <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white flex items-center">
+            <i class="pi pi-file-edit mr-2 text-blue-500"></i>
+            Gestión de Reportes
+          </h2>
+          <p class="text-gray-600 dark:text-gray-300">Contenido de gestión de reportes...</p>
+        </div>
+      } @else if (activeItem === items[3]) {
+        <!-- Gestión de Categorías -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 transition-all">
+          <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white flex items-center">
+            <i class="pi pi-tags mr-2 text-blue-500"></i>
+            Gestión de Categorías
+          </h2>
+          <p class="text-gray-600 dark:text-gray-300">Contenido de gestión de categorías...</p>
+        </div>
+      } @else if (activeItem === items[4]) {
+        <!-- Notificaciones Masivas -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 transition-all">
+          <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white flex items-center">
+            <i class="pi pi-bell mr-2 text-blue-500"></i>
+            Notificaciones Masivas
+          </h2>
+          <p class="text-gray-600 dark:text-gray-300">Contenido de notificaciones masivas...</p>
+        </div>
+      } @else if (activeItem === items[5]) {
+        <!-- Exportación de Datos -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 transition-all">
+          <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white flex items-center">
+            <i class="pi pi-download mr-2 text-blue-500"></i>
+            Exportación de Datos
+          </h2>
+          <p class="text-gray-600 dark:text-gray-300">Contenido de exportación de datos...</p>
+        </div>
+      }
+    </div>
+  </div>
+</div>

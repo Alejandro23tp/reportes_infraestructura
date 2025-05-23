@@ -1,10 +1,11 @@
-import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, OnInit } from '@angular/core';
 import { AdminService } from '../../../services/admin.service';
 import { CardModule } from 'primeng/card';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { ButtonModule } from 'primeng/button';
 import { ChartModule } from 'primeng/chart';
+
 
 // Define types for better type safety
 type ReportStatus = 'pendientes' | 'en_proceso' | 'resueltos' | 'cancelados';
@@ -34,7 +35,6 @@ interface DashboardStats {
 
 @Component({
   selector: 'app-dashboard',
-  standalone: true,
   imports: [
     CommonModule,
     CardModule,
@@ -43,9 +43,9 @@ interface DashboardStats {
     ChartModule
   ],
   templateUrl: './dashboard.component.html',
-  styleUrls: ['./dashboard.component.scss']
+  styleUrl: './dashboard.component.scss'
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit{
   loading = true;
   stats: DashboardStats | null = null;
   error: string | null = null;
@@ -308,4 +308,3 @@ categoryChartOptions = {
   }
 };
 }
-

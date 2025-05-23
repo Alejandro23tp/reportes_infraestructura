@@ -8,6 +8,7 @@ import { HttpClient } from '@angular/common/http';
 import { initializeApp } from 'firebase/app';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 import { environment } from '../environments/environment';
+import { NgxSonnerToaster } from 'ngx-sonner';
 
 const firebaseApp = initializeApp(environment.firebaseConfig);
 const messaging = getMessaging(firebaseApp);
@@ -15,7 +16,7 @@ const messaging = getMessaging(firebaseApp);
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, HeaderComponent, MobileNavComponent, CommonModule],
+  imports: [RouterOutlet, HeaderComponent, MobileNavComponent, CommonModule, NgxSonnerToaster],
   template: `
     <div class="flex flex-col min-h-screen">
       <app-header *ngIf="(isLoggedIn$ | async) === true && router.url !== '/mapa'"></app-header>
@@ -23,6 +24,7 @@ const messaging = getMessaging(firebaseApp);
         <router-outlet></router-outlet>
       </main>
       <app-mobile-nav *ngIf="(isLoggedIn$ | async) === true && router.url !== '/mapa'" class="md:hidden"></app-mobile-nav>
+      <ngx-sonner-toaster theme="dark" richColors />
     </div>
   `
 })

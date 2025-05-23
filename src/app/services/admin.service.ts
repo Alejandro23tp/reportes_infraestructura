@@ -21,14 +21,20 @@ export class AdminService {
     let httpParams = new HttpParams();
     
     if (params) {
+      console.log('Parámetros recibidos en el servicio:', params);
       Object.keys(params).forEach(key => {
         if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
           httpParams = httpParams.set(key, params[key]);
+          console.log(`Agregando parámetro: ${key}=${params[key]}`);
         }
       });
     }
     
-    return this.http.get(`${this.apiUrl}/usuarios`, { params: httpParams });
+    const url = `${this.apiUrl}/usuarios`;
+    console.log('URL de la solicitud:', url);
+    console.log('Parámetros HTTP:', httpParams.toString());
+    
+    return this.http.get(url, { params: httpParams });
   }
 
   verUsuario(id: number): Observable<any> {
