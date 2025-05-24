@@ -154,7 +154,7 @@ export class UsuariosComponent implements OnInit {
       });
   }
 
-  cambiarRol(usuario: Usuario, rol: string, event?: Event): void {
+  async cambiarRol(usuario: Usuario, rol: string, event?: Event): Promise<void> {
     if (event) event.stopPropagation();
     
     if (usuario.rol === rol) {
@@ -162,7 +162,15 @@ export class UsuariosComponent implements OnInit {
       return;
     }
 
-    if (confirm(`¿Está seguro de cambiar el rol de ${usuario.nombre} a ${rol}?`)) {
+    const confirmar = await this.mostrarConfirmacion(
+      'Cambiar rol de usuario',
+      `¿Está seguro de cambiar el rol de ${usuario.nombre} a ${rol}?`,
+      'warning',
+      'Sí, cambiar rol',
+      'Cancelar'
+    );
+
+    if (confirmar) {
       this.loading = true;
       this.error = null;
       this.selectedRole = rol;
@@ -173,11 +181,17 @@ export class UsuariosComponent implements OnInit {
           next: (response) => {
             usuario.rol = rol; // Actualizar el rol localmente
             this.selectedRole = null;
-            toast.success(`Rol cambiado a ${rol} correctamente`);
+            toast.success(`Rol cambiado a ${rol} correctamente`, {
+              description: `El usuario ${usuario.nombre} ahora tiene el rol de ${rol}`,
+              duration: 3000
+            });
           },
           error: (err) => {
             this.error = 'Error al cambiar el rol. Por favor, intente nuevamente.';
-            toast.error(this.error);
+            toast.error(this.error, {
+              description: 'Ocurrió un error al intentar actualizar el rol del usuario',
+              duration: 3000
+            });
             console.error('Error al cambiar rol:', err);
             this.selectedRole = null;
           }
@@ -185,11 +199,25 @@ export class UsuariosComponent implements OnInit {
     }
   }
 
-  cambiarEstado(usuario: Usuario): void {
+  async cambiarEstado(usuario: Usuario): Promise<void> {
     const nuevoEstado = !usuario.activo;
     const accion = nuevoEstado ? 'activar' : 'desactivar';
+    const titulo = nuevoEstado ? 'Activar usuario' : 'Desactivar usuario';
+    const mensaje = nuevoEstado 
+      ? `¿Está seguro de activar al usuario ${usuario.nombre}?`
+      : `¿Está seguro de desactivar al usuario ${usuario.nombre}?`;
+    const icono = nuevoEstado ? 'success' : 'warning';
+    const textoBoton = nuevoEstado ? 'Sí, activar' : 'Sí, desactivar';
 
-    if (confirm(`¿Está seguro de ${accion} el usuario ${usuario.nombre}?`)) {
+    const confirmar = await this.mostrarConfirmacion(
+      titulo,
+      mensaje,
+      icono,
+      textoBoton,
+      'Cancelar'
+    );
+
+    if (confirmar) {
       this.loading = true;
       this.error = null;
 
@@ -198,36 +226,99 @@ export class UsuariosComponent implements OnInit {
         .subscribe({
           next: (response) => {
             this.cargarUsuarios(this.paginacion?.current_page);
-            toast.success(`Usuario ${nuevoEstado ? 'activado' : 'desactivado'} correctamente`);
+            toast.success(`Usuario ${accion} correctamente`, {
+              description: nuevoEstado 
+                ? `El usuario ${usuario.nombre} ha sido activado con éxito`
+                : `El usuario ${usuario.nombre} ha sido desactivado`,
+              duration: 3000
+            });
           },
           error: (err) => {
             this.error = `Error al ${accion} el usuario. Por favor, intente nuevamente.`;
-            toast.error(this.error);
+            toast.error(this.error, {
+              description: 'Ocurrió un error al intentar cambiar el estado del usuario',
+              duration: 3000
+            });
             console.error(`Error al ${accion} usuario:`, err);
           }
         });
     }
   }
 
-  eliminarUsuario(id: number): void {
-    if (confirm('¿Está seguro de eliminar este usuario? Esta acción no se puede deshacer.')) {
+  async eliminarUsuario(usuario: Usuario): Promise<void> {
+    const confirmar = await this.mostrarConfirmacion(
+      'Eliminar usuario',
+      `¿Está seguro de eliminar al usuario ${usuario.nombre}? Esta acción es irreversible.`,
+      'error',
+      'Sí, eliminar',
+      'Cancelar',
+      'Esta acción no se puede deshacer. Se eliminarán todos los datos asociados al usuario.'
+    );
+
+    if (confirmar) {
       this.loading = true;
       this.error = null;
 
-      this.adminService.eliminarUsuario(id)
+      this.adminService.eliminarUsuario(usuario.id)
         .pipe(finalize(() => this.loading = false))
         .subscribe({
           next: (response) => {
             this.cargarUsuarios(this.paginacion?.current_page);
-            toast.success('Usuario eliminado correctamente');
+            toast.success('Usuario eliminado correctamente', {
+              description: `El usuario ${usuario.nombre} ha sido eliminado del sistema`,
+              duration: 3000
+            });
           },
           error: (err) => {
             this.error = 'Error al eliminar el usuario. Por favor, intente nuevamente.';
-            toast.error(this.error);
+            toast.error(this.error, {
+              description: 'Ocurrió un error al intentar eliminar el usuario',
+              duration: 3000
+            });
             console.error('Error al eliminar usuario:', err);
           }
         });
     }
+  }
+
+  private mostrarConfirmacion(
+    titulo: string,
+    mensaje: string,
+    tipo: 'success' | 'error' | 'warning' | 'info' = 'warning',
+    textoBotonAceptar: string = 'Aceptar',
+    textoBotonCancelar: string = 'Cancelar',
+    descripcion?: string
+  ): Promise<boolean> {
+    return new Promise((resolve) => {
+      const toastId = toast.loading('Cargando...');
+      
+      // Simulamos un diálogo de confirmación con dos toasts consecutivos
+      setTimeout(() => {
+        toast.dismiss(toastId);
+        
+        // Mostrar el mensaje de confirmación usando toast con acciones
+        toast(
+          mensaje,
+          {
+            description: descripcion,
+            duration: 10000, // 10 segundos para que el usuario decida
+            action: {
+              label: textoBotonAceptar,
+              onClick: () => resolve(true)
+            },
+            cancel: {
+              label: textoBotonCancelar,
+              onClick: () => resolve(false)
+            }
+          }
+        );
+        
+        // Cerrar automáticamente después de 10 segundos si no se toma una decisión
+        setTimeout(() => {
+          resolve(false);
+        }, 10000);
+      }, 300);
+    });
   }
 
   cancelarEdicion(): void {

@@ -1,1 +1,616 @@
-<p>reportes works!</p>
+<!-- Panel de Administración - Gestión de Reportes -->
+<div class="w-full min-h-screen bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100 p-6">
+  <!-- Header -->
+  <div class="mb-8 border-b border-gray-200 dark:border-gray-700 pb-4">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white flex items-center">
+          <svg class="w-8 h-8 mr-3 text-blue-600 dark:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
+            <path d="M8 10v4"/>
+            <path d="M12 10v2"/>
+            <path d="M16 10v6"/>
+          </svg>
+          Gestión de Reportes
+        </h1>
+        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Administra los reportes del sistema</p>
+      </div>
+      <button class="mt-4 md:mt-0 flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-gray-800 hover:bg-gray-100 shadow transition dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700" (click)="limpiarFiltros()">
+        <i class="fas fa-refresh"></i> Limpiar Filtros
+      </button>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="bg-gray-100 rounded-xl shadow-lg p-4 sm:p-6 mb-6 dark:bg-gray-800">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
+      <div class="sm:col-span-2 lg:col-span-3 xl:col-span-2">
+        <label class="block text-sm font-semibold text-gray-700 mb-1 dark:text-gray-200">Buscar</label>
+        <input type="text" class="w-full border border-gray-300 bg-white text-gray-900 rounded-lg focus:ring-blue-500 focus:border-blue-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100" placeholder="Buscar por título o descripción..." [(ngModel)]="filtros.buscar" (keyup.enter)="aplicarFiltros()">
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1 dark:text-gray-200">Estado</label>
+        <select class="w-full border border-gray-300 bg-white text-gray-900 rounded-lg dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100" [(ngModel)]="filtros.estado" (change)="aplicarFiltros()">
+          <option value="">Todos</option>
+          <option *ngFor="let estado of estados" [value]="estado">{{estado}}</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1 dark:text-gray-200">Urgencia</label>
+        <select class="w-full border border-gray-300 bg-white text-gray-900 rounded-lg dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100" [(ngModel)]="filtros.urgencia" (change)="aplicarFiltros()">
+          <option value="">Todas</option>
+          <option *ngFor="let urgencia of nivelesUrgencia" [value]="urgencia">{{urgencia | titlecase}}</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1 dark:text-gray-200">Categoría</label>
+        <select class="w-full border border-gray-300 bg-white text-gray-900 rounded-lg dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100" [(ngModel)]="filtros.categoria_id" (change)="aplicarFiltros()">
+          <option value="">Todas</option>
+          <option *ngFor="let categoria of categorias" [value]="categoria.id">
+            {{ categoria.nombre }}
+          </option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1 dark:text-gray-200">Ordenar por</label>
+        <select class="w-full border border-gray-300 bg-white text-gray-900 rounded-lg dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100" [(ngModel)]="filtros.order_by" (change)="aplicarFiltros()">
+          <option value="created_at">Fecha</option>
+          <option value="estado">Estado</option>
+          <option value="urgencia">Urgencia</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1 dark:text-gray-200">Orden</label>
+        <select class="w-full border border-gray-300 bg-white text-gray-900 rounded-lg dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100" [(ngModel)]="filtros.order_dir" (change)="aplicarFiltros()">
+          <option value="desc">Desc</option>
+          <option value="asc">Asc</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla de Reportes -->
+  <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+    <div class="overflow-x-auto">
+      <div class="inline-block min-w-full">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead class="bg-gray-50 dark:bg-gray-700 hidden sm:table-header-group">
+            <tr class="text-left">
+              <th class="w-24 px-2 sm:px-3 py-3 text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors" (click)="ordenarPor('id')">
+                <div class="flex items-center">
+                  ID
+                  <span class="ml-1">
+                    <i class="fas fa-sort text-gray-400" *ngIf="filtros.order_by !== 'id'"></i>
+                    <i class="fas fa-sort-up text-blue-500" *ngIf="filtros.order_by === 'id' && filtros.order_dir === 'asc'"></i>
+                    <i class="fas fa-sort-down text-blue-500" *ngIf="filtros.order_by === 'id' && filtros.order_dir === 'desc'"></i>
+                  </span>
+                </div>
+              </th>
+              <th class="min-w-[200px] max-w-[300px] px-3 py-3 text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors" (click)="ordenarPor('titulo')">
+                <div class="flex items-center">
+                  Título
+                  <span class="ml-1">
+                    <i class="fas fa-sort text-gray-400" *ngIf="filtros.order_by !== 'titulo'"></i>
+                    <i class="fas fa-sort-up text-blue-500" *ngIf="filtros.order_by === 'titulo' && filtros.order_dir === 'asc'"></i>
+                    <i class="fas fa-sort-down text-blue-500" *ngIf="filtros.order_by === 'titulo' && filtros.order_dir === 'desc'"></i>
+                  </span>
+                </div>
+              </th>
+              <th class="w-32 px-2 py-3 text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors" (click)="ordenarPor('estado')">
+                <div class="flex items-center justify-center">
+                  <span class="text-center">Estado</span>
+                  <span class="ml-1">
+                    <i class="fas fa-sort text-gray-400" *ngIf="filtros.order_by !== 'estado'"></i>
+                    <i class="fas fa-sort-up text-blue-500" *ngIf="filtros.order_by === 'estado' && filtros.order_dir === 'asc'"></i>
+                    <i class="fas fa-sort-down text-blue-500" *ngIf="filtros.order_by === 'estado' && filtros.order_dir === 'desc'"></i>
+                  </span>
+                </div>
+              </th>
+              <th class="w-32 px-2 py-3 text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors" (click)="ordenarPor('urgencia')">
+                <div class="flex items-center justify-center">
+                  <span class="text-center">Urgencia</span>
+                  <span class="ml-1">
+                    <i class="fas fa-sort text-gray-400" *ngIf="filtros.order_by !== 'urgencia'"></i>
+                    <i class="fas fa-sort-up text-blue-500" *ngIf="filtros.order_by === 'urgencia' && filtros.order_dir === 'asc'"></i>
+                    <i class="fas fa-sort-down text-blue-500" *ngIf="filtros.order_by === 'urgencia' && filtros.order_dir === 'desc'"></i>
+                  </span>
+                </div>
+              </th>
+              <th class="min-w-[120px] max-w-[180px] px-2 py-3 text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                <div class="text-center">Categoría</div>
+              </th>
+              <th class="min-w-[120px] max-w-[180px] px-2 py-3 text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                <div class="text-center">Usuario</div>
+              </th>
+              <th class="hidden lg:table-cell min-w-[140px] max-w-[200px] px-2 py-3 text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                <div class="text-center">Asignado a</div>
+              </th>
+              <th class="w-36 px-2 py-3 text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors" (click)="ordenarPor('created_at')">
+                <div class="flex items-center justify-center">
+                  <span class="text-center">Fecha</span>
+                  <span class="ml-1">
+                    <i class="fas fa-sort text-gray-400" *ngIf="filtros.order_by !== 'created_at'"></i>
+                    <i class="fas fa-sort-up text-blue-500" *ngIf="filtros.order_by === 'created_at' && filtros.order_dir === 'asc'"></i>
+                    <i class="fas fa-sort-down text-blue-500" *ngIf="filtros.order_by === 'created_at' && filtros.order_dir === 'desc'"></i>
+                  </span>
+                </div>
+              </th>
+              <th class="w-32 px-2 py-3 text-right text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                <div class="text-center">Acciones</div>
+              </th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
+          <!-- Mobile View -->
+          <tr *ngFor="let reporte of reportes; trackBy: trackByReporteId" class="sm:hidden hover:bg-gray-50 dark:hover:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
+            <td class="p-3">
+              <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                <!-- Header -->
+                <div class="flex justify-between items-start mb-3">
+                  <div>
+                    <h3 class="font-bold text-gray-900 dark:text-white">#{{reporte.id}} - {{reporte.titulo}}</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      <i class="far fa-user mr-1"></i>
+                      {{reporte.usuario?.nombre || 'Usuario'}}
+                    </p>
+                  </div>
+                  
+                  <!-- Estado -->
+                  <span [ngClass]="{
+                    'bg-yellow-100 text-yellow-800': reporte.estado === 'Pendiente',
+                    'bg-blue-100 text-blue-800': reporte.estado === 'En Proceso',
+                    'bg-green-100 text-green-800': reporte.estado === 'Completado',
+                    'bg-red-100 text-red-800': reporte.estado !== 'Pendiente' && reporte.estado !== 'En Proceso' && reporte.estado !== 'Completado'
+                  }" class="px-2 py-1 rounded-full text-xs font-medium">
+                    {{reporte.estado}}
+                  </span>
+                </div>
+                
+                <!-- Descripción -->
+                <p class="text-sm text-gray-600 dark:text-gray-300 mb-3">
+                  {{reporte.descripcion || 'Sin descripción'}}
+                </p>
+                
+                <!-- Info Adicional -->
+                <div class="flex flex-wrap gap-2 text-xs mb-3">
+                  <span class="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-2 py-1 rounded-full">
+                    <i class="fas fa-bolt mr-1"></i>
+                    {{reporte.urgencia | titlecase}}
+                  </span>
+                  <span class="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-2 py-1 rounded-full">
+                    <i class="fas fa-tag mr-1"></i>
+                    {{reporte.categoria?.nombre || 'Sin categoría'}}
+                  </span>
+                </div>
+                
+                <!-- Asignación -->
+                <div *ngIf="reporte.asignado_a" class="text-xs text-gray-500 dark:text-gray-400 mb-3 flex items-center">
+                  <span class="h-2 w-2 rounded-full bg-green-500 mr-1"></span>
+                  <span>Asignado a {{reporte.asignado_a.nombre}}</span>
+                </div>
+                
+                <!-- Fecha -->
+                <div class="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                  <i class="far fa-calendar-alt mr-1"></i>
+                  {{formatearFecha(reporte.created_at)}}
+                </div>
+                
+                <!-- Acciones -->
+                <div class="flex justify-between items-center pt-3 border-t border-gray-200 dark:border-gray-700">
+                  <!-- Botón Ver Detalles -->
+                  <button (click)="verDetalle(reporte)" class="flex items-center text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium">
+                    <i class="fas fa-eye mr-1"></i> Ver
+                  </button>
+                  
+                  <!-- Botón Historial -->
+                  <button (click)="verHistorial(reporte.id)" class="flex items-center text-cyan-600 hover:text-cyan-800 dark:text-cyan-400 dark:hover:text-cyan-300 text-sm font-medium">
+                    <i class="fas fa-history mr-1"></i> Historial
+                  </button>
+                  
+                  <!-- Botón Acciones -->
+                  <div class="relative">
+                    <button (click)="toggleDropdown(reporte.id, $event)" class="flex items-center text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300 text-sm font-medium">
+                      <i class="fas fa-ellipsis-h mr-1"></i> Acciones
+                    </button>
+                    
+                    <!-- Menú Desplegable -->
+                    <div *ngIf="dropdownStates[reporte.id]" class="absolute right-0 mt-1 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-50 border border-gray-200 dark:border-gray-700">
+                      <div class="py-1">
+                        <a (click)="abrirCambiarEstado(reporte); closeDropdown(reporte.id, $event); $event.preventDefault()" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+                          <i class="fas fa-edit mr-2"></i> Cambiar Estado
+                        </a>
+                        <a (click)="abrirCambiarUrgencia(reporte); closeDropdown(reporte.id, $event); $event.preventDefault()" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+                          <i class="fas fa-exclamation-triangle mr-2"></i> Cambiar Urgencia
+                        </a>
+                        <a (click)="abrirAsignarReporte(reporte); closeDropdown(reporte.id, $event); $event.preventDefault()" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+                          <i class="fas fa-user-tag mr-2"></i> Asignar
+                        </a>
+                        <div class="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+                        <a (click)="eliminarReporte(reporte); closeDropdown(reporte.id, $event); $event.preventDefault()" class="block px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 cursor-pointer">
+                          <i class="fas fa-trash mr-2"></i> Eliminar
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+          
+          <!-- Desktop View -->
+          <tr *ngFor="let reporte of reportes; trackBy: trackByReporteId" 
+              class="hidden sm:table-row bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/70 transition-colors">
+            <td class="px-3 py-3 text-sm font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">
+              #{{reporte.id}}
+            </td>
+            <td class="px-4 py-3">
+              <div class="text-sm font-medium text-gray-900 dark:text-gray-100 truncate max-w-xs" [title]="reporte.titulo">
+                {{reporte.titulo}}
+              </div>
+              <div class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-xs">
+                {{reporte.descripcion ? (reporte.descripcion.length > 50 ? reporte.descripcion.substring(0, 50) + '...' : reporte.descripcion) : 'Sin descripción'}}
+              </div>
+            </td>
+            <td class="px-4 py-4">
+              <span [ngClass]="{
+                'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300': reporte.estado === 'Pendiente',
+                'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300': reporte.estado === 'En Proceso',
+                'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300': reporte.estado === 'Completado',
+                'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300': reporte.estado !== 'Pendiente' && reporte.estado !== 'En Proceso' && reporte.estado !== 'Completado'
+              }" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium">
+                {{reporte.estado}}
+              </span>
+            </td>
+            <td class="px-4 py-4">
+              <span [ngClass]="{
+                'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300': reporte.urgencia === 'crítico',
+                'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300': reporte.urgencia === 'alto',
+                'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300': reporte.urgencia === 'medio',
+                'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300': !reporte.urgencia
+              }" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium">
+                <i class="fas fa-bolt mr-1.5 text-xs"></i>
+                {{reporte.urgencia || 'No especificada' | titlecase}}
+              </span>
+            </td>
+            <td class="px-4 py-4 text-sm text-gray-900 dark:text-gray-100">
+              <span class="inline-flex items-center text-sm text-gray-700 dark:text-gray-300">
+                <i class="fas fa-tag mr-1.5 text-xs"></i>
+                {{reporte.categoria?.nombre || 'Sin categoría'}}
+              </span>
+            </td>
+            <td class="px-4 py-4">
+              <div class="text-sm text-gray-900 dark:text-gray-100 whitespace-nowrap">
+                {{reporte.usuario?.nombre || 'Usuario'}}
+              </div>
+            </td>
+            <td class="hidden lg:table-cell px-4 py-4 text-sm text-gray-900 dark:text-gray-100">
+              <div class="flex items-center">
+                <span *ngIf="reporte.asignado_a" class="h-2.5 w-2.5 rounded-full bg-green-500 mr-2"></span>
+                {{reporte.asignado_a?.nombre || 'Sin asignar'}}
+              </div>
+            </td>
+            <td class="hidden sm:table-cell px-3 py-3 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+              {{formatearFecha(reporte.created_at)}}
+            </td>
+            <td class="hidden sm:table-cell px-3 py-3">
+              <div class="flex justify-end space-x-1">
+                <!-- Botón Ver Detalle -->
+                <button class="p-1.5 sm:p-2 rounded bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-700 dark:hover:bg-blue-800 dark:text-blue-100" 
+                        (click)="verDetalle(reporte)" 
+                        title="Ver detalle">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" 
+                       stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" 
+                       class="lucide lucide-receipt-text-icon w-4 h-4 sm:w-5 sm:h-5">
+                    <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/>
+                    <path d="M14 8H8"/><path d="M16 12H8"/><path d="M13 16H8"/>
+                  </svg>
+                </button>
+            
+                <!-- Botón Ver Historial -->
+                <button class="p-1.5 sm:p-2 rounded bg-cyan-600 hover:bg-cyan-700 text-white dark:bg-cyan-700 dark:hover:bg-cyan-800 dark:text-cyan-100" 
+                        (click)="verHistorial(reporte.id)" 
+                        title="Ver historial">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" 
+                       stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" 
+                       class="lucide lucide-history-icon w-4 h-4 sm:w-5 sm:h-5">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
+                    <path d="M12 7v5l4 2"/>
+                  </svg>
+                </button>
+            
+                <!-- Menú Más Opciones -->
+                <div class="relative">
+                  <button class="p-1.5 sm:p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                          (click)="toggleDropdown(reporte.id, $event)"
+                          title="Más acciones">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" 
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" 
+                         class="lucide lucide-circle-ellipsis-icon w-4 h-4 sm:w-5 sm:h-5">
+                      <circle cx="12" cy="12" r="10"/><path d="M17 12h.01"/><path d="M12 12h.01"/><path d="M7 12h.01"/>
+                    </svg>
+                  </button>
+            
+                  <!-- Menú desplegable -->
+                  <div class="absolute right-0 mt-2 w-40 sm:w-48 bg-white border border-gray-200 rounded-lg shadow-xl z-50 dark:bg-gray-900 dark:border-gray-700 text-sm sm:text-base"
+                       *ngIf="dropdownStates[reporte.id]"
+                       (click)="$event.stopPropagation()">
+                    <div class="py-1">
+                      <a class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 cursor-pointer"
+                         (click)="closeDropdown(reporte.id, $event); abrirCambiarEstado(reporte)">
+                        <i class="fas fa-edit mr-2 w-4 text-center"></i>Cambiar Estado
+                      </a>
+                      <a class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 cursor-pointer"
+                         (click)="closeDropdown(reporte.id, $event); abrirCambiarUrgencia(reporte)">
+                        <i class="fas fa-exclamation-triangle mr-2 w-4 text-center"></i>Cambiar Urgencia
+                      </a>
+                      <a class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 cursor-pointer"
+                         (click)="closeDropdown(reporte.id, $event); abrirAsignarReporte(reporte)">
+                        <i class="fas fa-user mr-2 w-4 text-center"></i>Asignar
+                      </a>
+                      <hr class="border-gray-200 my-1 dark:border-gray-700">
+                      <a class="flex items-center px-4 py-2 text-red-500 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+                          (click)="closeDropdown(reporte.id, $event); eliminarReporte(reporte); $event.stopPropagation()">
+                        <i class="fas fa-trash mr-2 w-4 text-center"></i>Eliminar
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="reportes.length === 0" class="sm:table-row">
+            <td colspan="9" class="text-center py-6 text-gray-500 dark:text-gray-400">
+              <i class="fas fa-inbox fa-2x mb-2"></i>
+              <p>No se encontraron reportes</p>
+            </td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+    <!-- Paginación -->
+    <nav class="flex justify-center items-center mt-6" *ngIf="paginacion.last_page > 1">
+      <ul class="inline-flex items-center -space-x-px">
+        <li>
+          <a href="#" (click)="cambiarPagina(paginacion.current_page - 1)" class="px-3 py-2 ml-0 leading-tight text-gray-500 bg-white border border-gray-300 rounded-l-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white" [class.opacity-50]="paginacion.current_page === 1">Anterior</a>
+        </li>
+        <li *ngFor="let page of [].constructor(paginacion.last_page); let i = index">
+          <a href="#" (click)="cambiarPagina(i + 1)" class="px-3 py-2 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white" [class.bg-blue-700]="i + 1 === paginacion.current_page" [class.text-white]="i + 1 === paginacion.current_page">{{i + 1}}</a>
+        </li>
+        <li>
+          <a href="#" (click)="cambiarPagina(paginacion.current_page + 1)" class="px-3 py-2 leading-tight text-gray-500 bg-white border border-gray-300 rounded-r-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white" [class.opacity-50]="paginacion.current_page === paginacion.last_page">Siguiente</a>
+        </li>
+      </ul>
+      <div class="text-gray-500 ml-6 dark:text-gray-400">
+        Mostrando {{(paginacion.current_page - 1) * paginacion.per_page + 1}} - {{calcularFinPagina()}} de {{paginacion.total}} reportes
+      </div>
+    </nav>
+  </div>
+
+<!-- ... (mantener el contenido existente hasta la tabla) ... -->
+
+<!-- Modales -->
+  <!-- Modal Detalle Reporte -->
+<div *ngIf="mostrarModalDetalle" class="fixed inset-0 z-[9999] flex items-start pt-16 sm:pt-0 sm:items-center justify-center p-2 sm:p-4 bg-black bg-opacity-50 overflow-y-auto">
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl mx-auto my-4 sm:my-8 p-4 sm:p-6 max-h-[calc(100vh-2rem)] sm:max-h-[90vh] overflow-y-auto">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+      <h3 class="text-lg sm:text-xl font-bold dark:text-white">Detalle del Reporte #{{reporteSeleccionado?.id}}</h3>
+      <button (click)="mostrarModalDetalle = false" class="text-gray-500 hover:text-gray-700 dark:text-gray-300 self-end sm:self-auto">
+        <i class="fas fa-times text-xl"></i>
+      </button>
+    </div>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+      <div>
+        <h4 class="font-semibold mb-2 dark:text-gray-200">Información General</h4>
+        <div class="space-y-2">
+          <p class="flex flex-wrap gap-1"><strong class="dark:text-gray-300">Título:&nbsp;</strong> <span class="dark:text-gray-400">{{reporteSeleccionado?.titulo}}</span></p>
+          <p class="flex flex-wrap gap-1"><strong class="dark:text-gray-300">Descripción:&nbsp;</strong> <span class="dark:text-gray-400">{{reporteSeleccionado?.descripcion}}</span></p>
+          <p class="flex flex-wrap items-center gap-1"><strong class="dark:text-gray-300">Estado:&nbsp;</strong> 
+            <span [ngClass]="{
+              'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300': reporteSeleccionado?.estado === 'Pendiente',
+              'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300': reporteSeleccionado?.estado === 'En Proceso',
+              'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300': reporteSeleccionado?.estado === 'Completado'
+            }" class="px-2 py-1 rounded text-xs font-bold">
+              {{reporteSeleccionado?.estado}}
+            </span>
+          </p>
+          <p class="flex flex-wrap items-center gap-1"><strong class="dark:text-gray-300">Urgencia:&nbsp;</strong> 
+            <span [ngClass]="{
+              'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300': reporteSeleccionado?.urgencia === 'crítico',
+              'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300': reporteSeleccionado?.urgencia === 'alto',
+              'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300': reporteSeleccionado?.urgencia === 'medio'
+            }" class="px-2 py-1 rounded text-xs font-bold">
+              {{reporteSeleccionado?.urgencia | titlecase}}
+            </span>
+          </p>
+          <p class="flex flex-wrap gap-1"><strong class="dark:text-gray-300">Categoría:&nbsp;</strong> <span class="dark:text-gray-400">{{reporteSeleccionado?.categoria?.nombre || 'Sin categoría'}}</span></p>
+          <p class="flex flex-wrap gap-1"><strong class="dark:text-gray-300">Fecha:&nbsp;</strong> <span class="dark:text-gray-400">{{formatearFecha(reporteSeleccionado?.created_at || '')}}</span></p>
+        </div>
+      </div>
+      
+      <div>
+        <h4 class="font-semibold mb-2 dark:text-gray-200">Usuario y Asignación</h4>
+        <div class="space-y-2">
+          <p class="flex flex-wrap gap-1"><strong class="dark:text-gray-300">Reportado por:&nbsp;</strong> <span class="dark:text-gray-400">{{reporteSeleccionado?.usuario?.nombre}}</span></p>
+          <p class="flex flex-wrap gap-1"><strong class="dark:text-gray-300">Email:&nbsp;</strong> <span class="dark:text-gray-400">{{reporteSeleccionado?.usuario?.email}}</span></p>
+          <p class="flex flex-wrap gap-1"><strong class="dark:text-gray-300">Asignado a:&nbsp;</strong> <span class="dark:text-gray-400">{{reporteSeleccionado?.asignado_a?.nombre || 'Sin asignar'}}</span></p>
+          
+          <div *ngIf="reporteSeleccionado?.nota_admin" class="mt-4 p-3 bg-blue-50 rounded-lg dark:bg-blue-900">
+            <h5 class="font-semibold mb-1 dark:text-blue-200">Nota del Administrador</h5>
+            <p class="text-sm dark:text-blue-300">{{reporteSeleccionado?.nota_admin}}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="flex justify-end gap-2 mt-4">
+      <button (click)="mostrarModalDetalle = false" class="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white">
+        Cerrar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Cambiar Estado -->
+<div *ngIf="mostrarModalCambiarEstado" class="fixed inset-0 z-[9999] flex items-start pt-16 sm:pt-0 sm:items-center justify-center p-2 sm:p-4 bg-black bg-opacity-50 overflow-y-auto">
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-auto my-4 sm:my-8 p-4 sm:p-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+      <h3 class="text-lg sm:text-xl font-bold dark:text-white">Cambiar Estado - Reporte #{{reporteSeleccionado?.id}}</h3>
+      <button (click)="mostrarModalCambiarEstado = false" class="text-gray-500 hover:text-gray-700 dark:text-gray-300 self-end sm:self-auto">
+        <i class="fas fa-times text-xl"></i>
+      </button>
+    </div>
+    
+    <form (ngSubmit)="cambiarEstado()">
+      <div class="mb-4">
+        <label class="block text-sm font-medium mb-2 dark:text-gray-300">Nuevo Estado</label>
+        <select [(ngModel)]="estadoForm.estado" name="estado" required
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+          <option *ngFor="let estado of estados" [value]="estado">{{estado}}</option>
+        </select>
+      </div>
+      
+      <div class="mb-4">
+        <label class="block text-sm font-medium mb-2 dark:text-gray-300">Nota (Opcional)</label>
+        <textarea [(ngModel)]="estadoForm.nota_admin" name="nota_admin" rows="3"
+                  class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  placeholder="Agregar una nota..."></textarea>
+      </div>
+      
+      <div class="flex justify-end gap-2">
+        <button type="button" (click)="mostrarModalCambiarEstado = false" 
+                class="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white">
+          Cancelar
+        </button>
+        <button type="submit" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-700 dark:hover:bg-blue-800">
+          Guardar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Cambiar Urgencia -->
+<div *ngIf="mostrarModalCambiarUrgencia" class="fixed inset-0 z-[9999] flex items-start pt-16 sm:pt-0 sm:items-center justify-center p-2 sm:p-4 bg-black bg-opacity-50 overflow-y-auto">
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-auto my-4 sm:my-8 p-4 sm:p-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+      <h3 class="text-lg sm:text-xl font-bold dark:text-white">Cambiar Urgencia - Reporte #{{reporteSeleccionado?.id}}</h3>
+      <button (click)="mostrarModalCambiarUrgencia = false" class="text-gray-500 hover:text-gray-700 dark:text-gray-300 self-end sm:self-auto">
+        <i class="fas fa-times text-xl"></i>
+      </button>
+    </div>
+    
+    <form (ngSubmit)="cambiarUrgencia()">
+      <div class="mb-4">
+        <label class="block text-sm font-medium mb-2 dark:text-gray-300">Nueva Urgencia</label>
+        <select [(ngModel)]="urgenciaForm.urgencia" name="urgencia" required
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+          <option *ngFor="let urgencia of nivelesUrgencia" [value]="urgencia">{{urgencia | titlecase}}</option>
+        </select>
+      </div>
+      
+      <div class="flex justify-end gap-2">
+        <button type="button" (click)="mostrarModalCambiarUrgencia = false" 
+                class="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white">
+          Cancelar
+        </button>
+        <button type="submit" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-700 dark:hover:bg-blue-800">
+          Guardar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Asignar Reporte -->
+<div *ngIf="mostrarModalAsignar" class="fixed inset-0 z-[9999] flex items-start pt-16 sm:pt-0 sm:items-center justify-center p-2 sm:p-4 bg-black bg-opacity-50 overflow-y-auto">
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-auto my-4 sm:my-8 p-4 sm:p-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+      <h3 class="text-lg sm:text-xl font-bold dark:text-white">Asignar Reporte #{{reporteSeleccionado?.id}}</h3>
+      <button (click)="mostrarModalAsignar = false" class="text-gray-500 hover:text-gray-700 dark:text-gray-300 self-end sm:self-auto">
+        <i class="fas fa-times text-xl"></i>
+      </button>
+    </div>
+    
+    <form (ngSubmit)="asignarReporte()">
+      <div class="mb-4">
+        <label class="block text-sm font-medium mb-2 dark:text-gray-300">Asignar a</label>
+        <select [(ngModel)]="asignacionForm.usuarioId" name="usuarioId" required
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+          <option [ngValue]="null">Seleccionar administrador...</option>
+          <option *ngFor="let user of adminUsers" [ngValue]="user.id">
+            {{ user.nombre }} ({{ user.email }})
+          </option>
+        </select>
+      </div>
+      
+      <div class="flex justify-end gap-2">
+        <button type="button" (click)="mostrarModalAsignar = false" 
+                class="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white">
+          Cancelar
+        </button>
+        <button type="submit" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-700 dark:hover:bg-blue-800">
+          Asignar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Historial -->
+<div *ngIf="mostrarModalHistorial" class="fixed inset-0 z-[9999] flex items-start pt-16 sm:pt-0 sm:items-center justify-center p-2 sm:p-4 bg-black bg-opacity-50 overflow-y-auto">
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl mx-4 p-6 max-h-[calc(100vh-2rem)] sm:max-h-[90vh] overflow-y-auto">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-xl font-bold dark:text-white">Historial del Reporte</h3>
+      <button (click)="mostrarModalHistorial = false" class="text-gray-500 hover:text-gray-700 dark:text-gray-300">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <div class="space-y-4">
+      <div *ngFor="let item of historial" class="p-4 border rounded-lg dark:border-gray-700">
+        <div class="flex justify-between items-start mb-2">
+          <div>
+            <span class="inline-block px-2 py-1 text-xs font-bold bg-blue-100 text-blue-800 rounded dark:bg-blue-900 dark:text-blue-300">
+              {{item.tipo || 'Acción'}}
+            </span>
+            <span class="ml-2 font-medium dark:text-gray-300">{{item.usuario.nombre}}</span>
+          </div>
+          <span class="text-sm text-gray-500 dark:text-gray-400">{{formatearFecha(item.fecha)}}</span>
+        </div>
+        
+        <div *ngIf="typeof item.comentario === 'string'" class="text-sm dark:text-gray-400">
+          {{item.comentario}}
+        </div>
+        
+        <div *ngIf="parsearComentario(item.comentario) as comentarioParsed" class="space-y-2">
+          <div *ngIf="comentarioParsed.cambios" class="text-sm">
+            <div class="font-medium dark:text-gray-300">Cambios:</div>
+            <ul class="list-disc pl-4 space-y-1 mt-1">
+              <li *ngFor="let cambio of comentarioParsed.cambios" class="dark:text-gray-400">
+                <span class="font-medium">{{cambio.campo}}:</span> 
+                {{cambio.valor_anterior}} → {{cambio.nuevo_valor}}
+              </li>
+            </ul>
+          </div>
+          
+          <div *ngIf="comentarioParsed.nota" class="p-2 bg-yellow-50 rounded dark:bg-yellow-900">
+            <p class="text-sm dark:text-yellow-200"><strong>Nota:</strong> {{comentarioParsed.nota}}</p>
+          </div>
+        </div>
+      </div>
+      
+      <div *ngIf="!historial || historial.length === 0" class="text-center py-4 text-gray-500 dark:text-gray-400">
+        <i class="fas fa-history fa-lg mb-2"></i>
+        <p>No hay historial disponible</p>
+      </div>
+    </div>
+    
+    <div class="flex justify-end mt-4">
+      <button (click)="mostrarModalHistorial = false" class="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white">
+        Cerrar
+      </button>
+    </div>
+  </div>
+</div>

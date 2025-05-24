@@ -88,6 +88,10 @@ export class AdminService {
     return this.http.put(`${this.apiUrl}/reportes/${id}/prioridad`, { urgencia });
   }
 
+  historialReporte(id: number): Observable<any> {
+    return this.http.get(`${this.apiUrl}/reportes/${id}/historial`);
+  }
+
   asignarReporte(id: number, usuarioId: number): Observable<any> {
     return this.http.post(`${this.apiUrl}/reportes/${id}/asignar`, { asignado_a: usuarioId });
   }
