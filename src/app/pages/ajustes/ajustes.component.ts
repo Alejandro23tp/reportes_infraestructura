@@ -1,13 +1,13 @@
 import { UAParser } from 'ua-parser-js';
-import { Component, OnInit } from '@angular/core';
-import { Observable, BehaviorSubject, of } from 'rxjs';
+import { Component, OnInit, OnDestroy, Injector } from '@angular/core';
+import { Observable, BehaviorSubject, of, Subject, lastValueFrom } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
-import { getMessaging, getToken, Messaging } from '@angular/fire/messaging';
+import { getMessaging, getToken, Messaging, onMessage, MessagePayload } from '@angular/fire/messaging';
 import { NotificacionesService } from '../../services/notificaciones.service';
 import { environment } from '../../../environments/environment';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { Injector } from '@angular/core';
+import { takeUntil } from 'rxjs/operators';
 
 interface Device {
   dispositivo_id: string;
@@ -24,13 +24,15 @@ interface Device {
   templateUrl: './ajustes.component.html',
   styleUrl: './ajustes.component.scss'
 })
-export class AjustesComponent implements OnInit {
+export class AjustesComponent implements OnInit, OnDestroy {
   isLoggedIn$: Observable<boolean>;
   notificationStatus$: Observable<{ isEnabled: boolean; message: string }>;
   devices$ = new BehaviorSubject<Device[]>([]);
   loading = false;
   error: string | null = null;
   private messaging: Messaging;
+  private destroy$ = new Subject<void>();
+  private fcmToken: string | null = null;
 
   constructor(
     private authService: AuthService,
@@ -45,6 +47,40 @@ export class AjustesComponent implements OnInit {
 
   ngOnInit() {
     this.loadDevices();
+    this.checkFcmToken();
+    
+    // Escuchar mensajes en primer plano
+    if (this.messaging) {
+      onMessage(this.messaging, (payload) => {
+        console.log('Mensaje recibido:', payload);
+        // Aquí puedes manejar la notificación en primer plano
+      });
+    }
+  }
+  
+  private async checkFcmToken() {
+    try {
+      // Verificar si ya tenemos un token almacenado
+      this.fcmToken = localStorage.getItem('fcm_token');
+      
+      // Si no hay token, solicitarlo
+      if (!this.fcmToken && this.messaging) {
+        this.fcmToken = await getToken(this.messaging, { vapidKey: environment.vapidKey });
+        if (this.fcmToken) {
+          localStorage.setItem('fcm_token', this.fcmToken);
+          // Actualizar el token en el servidor
+          const deviceId = this.notificacionesService.getCurrentDeviceId();
+          await this.notificacionesService.requestPermission(this.fcmToken, deviceId);
+        }
+      }
+    } catch (error) {
+      console.error('Error al verificar el token FCM:', error);
+    }
+  }
+  
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   loadDevices() {
@@ -111,6 +147,9 @@ export class AjustesComponent implements OnInit {
       this.notificationStatus$ = this.notificacionesService.checkNotificationStatus();
       await this.loadDevices();
       
+      // Mostrar mensaje de éxito
+      this.error = null;
+      
     } catch (error: any) {
       console.error('Error completo al activar notificaciones:', error);
       const errorMessage = error?.error?.message || error?.message;
@@ -130,11 +169,15 @@ export class AjustesComponent implements OnInit {
     this.error = null;
 
     try {
-      await this.notificacionesService.unsubscribe(deviceId).toPromise();
+      // Usar directamente el método que ya devuelve una Promesa
+      await this.notificacionesService.unsubscribe(deviceId);
       
       // Actualizar el estado
       this.notificationStatus$ = this.notificacionesService.checkNotificationStatus();
-      this.loadDevices();
+      await this.loadDevices();
+      
+      // Mostrar mensaje de éxito
+      this.error = null;
     } catch (error) {
       console.error('Error al desactivar notificaciones:', error);
       this.error = 'Error al desactivar las notificaciones. Por favor, intente nuevamente.';
