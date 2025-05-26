@@ -5,6 +5,7 @@ import { MenuItem } from 'primeng/api';
 import { DashboardComponent } from '../../components/admin/dashboard/dashboard.component';
 import { UsuariosComponent } from '../../components/admin/usuarios/usuarios.component';
 import { ReportesComponent } from '../../components/admin/reportes/reportes.component';
+import { CategoriasComponent } from '../../components/admin/categorias/categorias.component';
 
 @Component({
   selector: 'app-admin',
@@ -14,7 +15,8 @@ import { ReportesComponent } from '../../components/admin/reportes/reportes.comp
     TabMenuModule,
     DashboardComponent,
     UsuariosComponent,
-    ReportesComponent
+    ReportesComponent,
+    CategoriasComponent
   ],
   templateUrl: './admin.component.html',
   styleUrl: './admin.component.scss'
