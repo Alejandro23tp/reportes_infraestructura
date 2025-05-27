@@ -66,17 +66,13 @@
         </div>
       } @else if (activeItem === items[3]) {
         <!-- Gestión de Categorías -->
-        <div class="reportes-content">
+        <div class="categorias-content">
           <app-categorias></app-categorias>
         </div>
       } @else if (activeItem === items[4]) {
         <!-- Notificaciones Masivas -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 transition-all">
-          <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white flex items-center">
-            <i class="pi pi-bell mr-2 text-blue-500"></i>
-            Notificaciones Masivas
-          </h2>
-          <p class="text-gray-600 dark:text-gray-300">Contenido de notificaciones masivas...</p>
+        <div class="notificaciones-content">
+          <app-notificacionesmasivas></app-notificacionesmasivas>
         </div>
       } @else if (activeItem === items[5]) {
         <!-- Exportación de Datos -->

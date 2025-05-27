@@ -1,1 +1,251 @@
-<p>notificacionesmasivas works!</p>
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
+  <div class="max-w-7xl mx-auto">
+    <h1 class="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white mb-4 flex items-center">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 mr-3 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+        <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+      </svg>
+      Enviar Notificación Masiva
+    </h1>
+
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
+      <form [formGroup]="notificationForm" (ngSubmit)="onSubmit()" class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Columna izquierda: Título y Mensaje -->
+          <div class="md:col-span-2 space-y-6">
+            <!-- Título -->
+            <div>
+              <label for="titulo" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Título</label>
+              <input
+                type="text"
+                id="titulo"
+                formControlName="titulo"
+                class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                placeholder="Ingrese el título de la notificación"
+              >
+              <div *ngIf="notificationForm.get('titulo')?.touched && notificationForm.get('titulo')?.errors?.['required']" 
+                  class="mt-1 text-sm text-red-600 dark:text-red-400">
+                El título es requerido
+              </div>
+            </div>
+
+            <!-- Mensaje -->
+            <div>
+              <label for="mensaje" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mensaje</label>
+              <textarea
+                id="mensaje"
+                formControlName="mensaje"
+                rows="8"
+                class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                placeholder="Escriba el mensaje de la notificación"
+              ></textarea>
+              <div *ngIf="notificationForm.get('mensaje')?.touched && notificationForm.get('mensaje')?.errors?.['required']" 
+                  class="mt-1 text-sm text-red-600 dark:text-red-400">
+                El mensaje es requerido
+              </div>
+            </div>
+
+            <!-- Resultados -->
+            <div *ngIf="responseData" class="p-4 bg-gray-50 dark:bg-gray-700 rounded-md">
+              <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Resultado del envío</h3>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-700 dark:text-gray-300">
+                <div>
+                  <p class="font-medium">Total de usuarios:</p>
+                  <p>{{ responseData.total_usuarios || 0 }}</p>
+                </div>
+                <div>
+                  <p class="font-medium">Notificaciones enviadas:</p>
+                  <p class="text-green-600 dark:text-green-400">{{ responseData.dispositivos_enviados || 0 }}</p>
+                </div>
+                <div>
+                  <p class="font-medium">Fallos:</p>
+                  <p class="text-red-600 dark:text-red-400">{{ responseData.dispositivos_fallidos || 0 }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Columna derecha: Destinatarios -->
+          <div class="md:col-span-1">
+            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 h-full">
+              <h3 class="text-lg font-medium text-gray-800 dark:text-white mb-4 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                </svg>
+                Destinatarios
+              </h3>
+
+              <!-- Tipo de Destino -->
+              <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo de destinatarios</label>
+                <div class="space-y-2">
+                  <div *ngFor="let option of [
+                    { value: 'todos', label: 'Todos los usuarios' },
+                    { value: 'rol', label: 'Por rol' },
+                    { value: 'usuarios', label: 'Usuarios específicos' }
+                  ]" class="flex items-center">
+                    <input
+                      id="tipo-{{option.value}}"
+                      type="radio"
+                      formControlName="tipoDestino"
+                      [value]="option.value"
+                      class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600"
+                    >
+                    <label [for]="'tipo-' + option.value" class="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                      {{ option.label }}
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Selector de Rol -->
+              <div *ngIf="notificationForm.get('tipoDestino')?.value === 'rol'" class="mb-4">
+                <label for="rol" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Seleccionar Rol</label>
+                <select
+                  id="rol"
+                  formControlName="rol"
+                  class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                >
+                  <option value="" disabled>Seleccione un rol</option>
+                  <option *ngFor="let rol of roles" [value]="rol.value">{{ rol.label }}</option>
+                </select>
+                <div *ngIf="notificationForm.get('rol')?.touched && notificationForm.get('rol')?.errors?.['required']" 
+                    class="mt-1 text-sm text-red-600 dark:text-red-400">
+                  Por favor seleccione un rol
+                </div>
+              </div>
+
+              <!-- Selector de Usuarios -->
+              <div *ngIf="notificationForm.get('tipoDestino')?.value === 'usuarios'" class="user-selection-container">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Buscar y seleccionar usuarios</label>
+                
+                <!-- Search input -->
+                <div class="relative">
+                  <input
+                    type="text"
+                    [formControl]="buscadorUsuario"
+                    (click)="mostrarDropdown = true"
+                    (focus)="mostrarDropdown = true"
+                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                    placeholder="Buscar usuarios..."
+                    autocomplete="off"
+                  >
+                  
+                  <!-- Loading state -->
+                  <div *ngIf="cargandoUsuarios" class="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 shadow-lg rounded-md p-4">
+                    <div class="flex justify-center items-center">
+                      <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+                      <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">Cargando usuarios...</span>
+                    </div>
+                  </div>
+                  
+                  <!-- Dropdown with users -->
+                  <div *ngIf="mostrarDropdown" class="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm" style="max-height: 300px;">
+                    <div *ngIf="cargandoUsuarios" class="p-2">
+                      <div class="flex items-center">
+                        <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900 dark:border-gray-300"></div>
+                        <span class="ml-2 text-sm dark:text-gray-300">Cargando usuarios...</span>
+                      </div>
+                    </div>
+                    
+                    <div *ngIf="!cargandoUsuarios">
+                      <div *ngIf="usuariosFiltrados.length === 0" class="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">
+                        {{ buscadorUsuario.value ? 'No se encontraron usuarios' : 'Escriba para buscar usuarios' }}
+                      </div>
+                      
+                      <div *ngFor="let usuario of usuariosPaginados" 
+                          class="flex items-center px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+                          (click)="toggleSeleccionUsuario(usuario, $event)">
+                        <input
+                          type="checkbox"
+                          [checked]="estaSeleccionado(usuario.id)"
+                          class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded"
+                          (click)="$event.stopPropagation()"
+                          [attr.aria-label]="'Seleccionar ' + usuario.nombre"
+                        >
+                        <span class="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                          {{ usuario.nombre }} 
+                          <span class="text-gray-500 dark:text-gray-400 text-xs">({{ usuario.email }})</span>
+                        </span>
+                      </div>
+                      
+                      <!-- Controles de paginación -->
+                      <div *ngIf="totalPaginas > 1" class="border-t border-gray-200 dark:border-gray-700 px-4 py-2">
+                        <div class="flex items-center justify-between">
+                          <button 
+                            type="button"
+                            class="px-3 py-1 text-sm rounded-md border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-650 disabled:opacity-50"
+                            [disabled]="paginaActual === 1"
+                            (click)="cambiarPagina(paginaActual - 1)">
+                            &laquo; Anterior
+                          </button>
+                          <span class="text-sm text-gray-700 dark:text-gray-300">
+                            Página {{ paginaActual }} de {{ totalPaginas }}
+                          </span>
+                          <button 
+                            type="button"
+                            class="px-3 py-1 text-sm rounded-md border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-650 disabled:opacity-50"
+                            [disabled]="paginaActual === totalPaginas"
+                            (click)="cambiarPagina(paginaActual + 1)">
+                            Siguiente &raquo;
+                          </button>
+                        </div>
+                        <div class="mt-1 text-center text-xs text-gray-500 dark:text-gray-400">
+                          Mostrando {{ (paginaActual - 1) * itemsPorPagina + 1 }} - 
+                          {{ paginaActual * itemsPorPagina > usuariosFiltrados.length ? usuariosFiltrados.length : paginaActual * itemsPorPagina }}
+                          de {{ usuariosFiltrados.length }} usuarios
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Selected users chips -->
+                <div *ngIf="usuariosSeleccionados.size > 0" class="mt-3 flex flex-wrap gap-2">
+                  <ng-container *ngFor="let id of usuariosSeleccionados">
+                    <div *ngIf="getUsuarioById(id)" 
+                        class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
+                      {{ getUsuarioById(id)?.nombre || 'Usuario' }}
+                      <button type="button" 
+                              (click)="removeUsuario(id, $event)"
+                              class="ml-1.5 inline-flex items-center justify-center h-4 w-4 rounded-full text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-800 hover:text-blue-500 focus:outline-none"
+                              [attr.aria-label]="'Eliminar ' + (getUsuarioById(id)?.nombre || 'usuario')">
+                        <span class="sr-only">Eliminar</span>
+                        <svg class="h-2 w-2" fill="currentColor" viewBox="0 0 8 8">
+                          <path fill-rule="evenodd" d="M4 3.293l2.146-2.147a.5.5 0 01.708.708L4.707 4l2.147 2.146a.5.5 0 01-.708.708L4 4.707l-2.146 2.147a.5.5 0 01-.708-.708L3.293 4 1.146 1.854a.5.5 0 01.708-.708L4 3.293z" clip-rule="evenodd" />
+                        </svg>
+                      </button>
+                    </div>
+                  </ng-container>
+                </div>
+                
+                <!-- Validation message -->
+                <div *ngIf="notificationForm.get('usuarios')?.touched && notificationForm.get('usuarios')?.errors?.['required']" 
+                    class="mt-2 text-sm text-red-600 dark:text-red-400">
+                  <span>Por favor seleccione al menos un usuario</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Botón de envío -->
+        <div class="mt-6">
+          <button
+            type="submit"
+            [disabled]="isLoading || notificationForm.invalid"
+            class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span *ngIf="!isLoading">Enviar Notificaciones</span>
+            <span *ngIf="isLoading" class="flex items-center">
+              <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Enviando...
+            </span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

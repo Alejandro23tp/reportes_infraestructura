@@ -6,18 +6,20 @@ import { DashboardComponent } from '../../components/admin/dashboard/dashboard.c
 import { UsuariosComponent } from '../../components/admin/usuarios/usuarios.component';
 import { ReportesComponent } from '../../components/admin/reportes/reportes.component';
 import { CategoriasComponent } from '../../components/admin/categorias/categorias.component';
+import { NotificacionesmasivasComponent } from "../../components/admin/notificacionesmasivas/notificacionesmasivas.component";
 
 @Component({
   selector: 'app-admin',
   standalone: true,
   imports: [
-    CommonModule, 
+    CommonModule,
     TabMenuModule,
     DashboardComponent,
     UsuariosComponent,
     ReportesComponent,
-    CategoriasComponent
-  ],
+    CategoriasComponent,
+    NotificacionesmasivasComponent
+],
   templateUrl: './admin.component.html',
   styleUrl: './admin.component.scss'
 })
