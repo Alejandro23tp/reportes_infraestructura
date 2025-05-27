@@ -7,6 +7,7 @@ import { UsuariosComponent } from '../../components/admin/usuarios/usuarios.comp
 import { ReportesComponent } from '../../components/admin/reportes/reportes.component';
 import { CategoriasComponent } from '../../components/admin/categorias/categorias.component';
 import { NotificacionesmasivasComponent } from "../../components/admin/notificacionesmasivas/notificacionesmasivas.component";
+import { ExportarComponent } from "../../components/admin/exportar/exportar.component";
 
 @Component({
   selector: 'app-admin',
@@ -18,7 +19,8 @@ import { NotificacionesmasivasComponent } from "../../components/admin/notificac
     UsuariosComponent,
     ReportesComponent,
     CategoriasComponent,
-    NotificacionesmasivasComponent
+    NotificacionesmasivasComponent,
+    ExportarComponent
 ],
   templateUrl: './admin.component.html',
   styleUrl: './admin.component.scss'

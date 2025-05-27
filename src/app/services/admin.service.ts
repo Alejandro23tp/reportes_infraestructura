@@ -141,38 +141,95 @@ export class AdminService {
     return this.http.post(`${this.apiUrl}/notificaciones/enviar`, notificacionData);
   }
 
-  // Exportación de datos
-  exportarReportes(params?: any): Observable<any> {
-    let httpParams = new HttpParams();
-    
-    if (params) {
-      Object.keys(params).forEach(key => {
-        if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
-          httpParams = httpParams.set(key, params[key]);
-        }
-      });
+  // Exportar reportes
+exportarReportes(params: {
+  fecha_inicio?: string;
+  fecha_fin?: string;
+  estado?: string;
+  categoria_id?: number;
+} = {}): Observable<Blob> {
+  let httpParams = new HttpParams();
+  
+  if (params) {
+    if (params.fecha_inicio) {
+      httpParams = httpParams.set('fecha_inicio', params.fecha_inicio);
     }
     
-    return this.http.get(`${this.apiUrl}/exportar/reportes`, { 
-      params: httpParams,
-      responseType: 'blob' as 'json' // Para manejar la descarga de archivos
-    });
+    if (params.fecha_fin) {
+      httpParams = httpParams.set('fecha_fin', params.fecha_fin);
+    }
+    
+    if (params.estado) {
+      httpParams = httpParams.set('estado', params.estado);
+    }
+    
+    if (params.categoria_id !== undefined) {
+      httpParams = httpParams.set('categoria_id', params.categoria_id.toString());
+    }
   }
+  
+  return this.http.get(`${this.apiUrl}/exportar/reportes`, {
+    params: httpParams,
+    responseType: 'blob',
+    headers: {
+      'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    }
+  });
+}
 
-  exportarUsuarios(params?: any): Observable<any> {
-    let httpParams = new HttpParams();
-    
-    if (params) {
-      Object.keys(params).forEach(key => {
-        if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
-          httpParams = httpParams.set(key, params[key]);
-        }
-      });
+// Exportar usuarios
+// Exportar usuarios
+exportarUsuarios(params: {
+  rol?: string;
+  activo?: boolean | string | null;
+  fecha_registro_desde?: string;
+  fecha_registro_hasta?: string;
+} = {}): Observable<Blob> {
+  let httpParams = new HttpParams();
+  
+  // Solo agregar parámetros que tengan valor
+  if (params) {
+    // Manejar el parámetro rol
+    if (params.rol && params.rol !== '') {
+      httpParams = httpParams.set('rol', params.rol.toLowerCase());
     }
     
-    return this.http.get(`${this.apiUrl}/exportar/usuarios`, { 
-      params: httpParams,
-      responseType: 'blob' as 'json' // Para manejar la descarga de archivos
-    });
+    // Manejar el parámetro activo
+    if (params.activo !== null && params.activo !== undefined) {
+      // Convertir a booleano considerando diferentes formatos de entrada
+      let activoValue: boolean;
+      
+      if (typeof params.activo === 'string') {
+        // Para cuando viene del formulario como string
+        activoValue = params.activo === 'true' || params.activo === '1';
+      } else if (typeof params.activo === 'number') {
+        // Por si acaso viene como número
+        activoValue = params.activo === 1;
+      } else {
+        // Para booleanos directos
+        activoValue = Boolean(params.activo);
+      }
+      
+      // Enviar como booleano (true/false) en lugar de '1'/'0'
+      httpParams = httpParams.set('activo', activoValue.toString());
+    }
+    
+    // Manejar fechas
+    if (params.fecha_registro_desde) {
+      httpParams = httpParams.set('fecha_registro_desde', params.fecha_registro_desde);
+    }
+    
+    if (params.fecha_registro_hasta) {
+      httpParams = httpParams.set('fecha_registro_hasta', params.fecha_registro_hasta);
+    }
   }
+  
+  return this.http.get(`${this.apiUrl}/exportar/usuarios`, {
+    params: httpParams,
+    responseType: 'blob',
+    headers: {
+      'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    }
+  });
+}
 }
