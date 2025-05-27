@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../services/admin.service';
+import { toast } from 'ngx-sonner';
 
 @Component({
   selector: 'app-exportar',
@@ -13,8 +14,6 @@ import { AdminService } from '../../../services/admin.service';
 export class ExportarComponent {
   exportType: 'reportes' | 'usuarios' = 'reportes';
   loading = false;
-  error: string | null = null;
-  success = false;
 
   // Filtros para reportes
   reportFilters = {
@@ -36,8 +35,6 @@ export class ExportarComponent {
 
   exportData() {
     this.loading = true;
-    this.error = null;
-    this.success = false;
 
     try {
       if (this.exportType === 'reportes') {
@@ -96,15 +93,13 @@ export class ExportarComponent {
     document.body.removeChild(a);
     
     this.loading = false;
-    this.success = true;
-    setTimeout(() => this.success = false, 3000);
+    toast.success('¡Exportación completada con éxito!');
   }
 
   private handleError(error: any) {
     console.error('Error al exportar:', error);
-    this.error = 'Ocurrió un error al exportar los datos. Por favor, inténtalo de nuevo.';
+    toast.error('Ocurrió un error al exportar los datos. Por favor, inténtalo de nuevo.');
     this.loading = false;
-    setTimeout(() => this.error = null, 5000);
   }
 
   resetForm() {

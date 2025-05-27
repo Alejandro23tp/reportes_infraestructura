@@ -232,4 +232,20 @@ exportarUsuarios(params: {
     }
   });
 }
+
+  // Suscripciones a notificaciones por correo
+  suscribirEmail(email: string, nombre: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/suscripciones-correo/suscribir`, {
+      email,
+      nombre
+    });
+  }
+
+  cancelarSuscripcion(email: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/suscripciones-correo/cancelar/${email}`, {});
+  }
+
+  listarSuscriptores(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/suscripciones-correo/listar`);
+  }
 }

@@ -8,6 +8,7 @@ import { ReportesComponent } from '../../components/admin/reportes/reportes.comp
 import { CategoriasComponent } from '../../components/admin/categorias/categorias.component';
 import { NotificacionesmasivasComponent } from "../../components/admin/notificacionesmasivas/notificacionesmasivas.component";
 import { ExportarComponent } from "../../components/admin/exportar/exportar.component";
+import { NotificacionescorreoComponent } from "../../components/admin/notificacionescorreo/notificacionescorreo.component";
 
 @Component({
   selector: 'app-admin',
@@ -20,7 +21,8 @@ import { ExportarComponent } from "../../components/admin/exportar/exportar.comp
     ReportesComponent,
     CategoriasComponent,
     NotificacionesmasivasComponent,
-    ExportarComponent
+    ExportarComponent,
+    NotificacionescorreoComponent
 ],
   templateUrl: './admin.component.html',
   styleUrl: './admin.component.scss'
@@ -60,6 +62,11 @@ export class AdminComponent {
         label: 'Exportación de Datos', 
         icon: 'pi pi-fw pi-download',
         command: () => this.setActiveItem(this.items[5])
+      },
+      { 
+        label: 'Notificaciones por Correo', 
+        icon: 'pi pi-fw pi-envelope',
+        command: () => this.setActiveItem(this.items[6])
       }
     ];
 
