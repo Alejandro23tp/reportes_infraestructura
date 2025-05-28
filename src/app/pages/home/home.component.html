@@ -372,8 +372,24 @@
             </div>
           </div>
         </div>
+        
+        <!-- Indicador de carga al final de la lista -->
+        <div *ngIf="isLoadingMore" class="w-full flex justify-center py-8">
+          <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+        
+        <!-- Mensaje cuando no hay más contenido - Versión mejorada -->
+        <div *ngIf="!hasMorePages && listReports.length > 0" class="text-center py-8 px-4">
+          <div class="flex flex-col items-center justify-center space-y-4">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-green-500 dark:text-green-400">
+              <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path>
+              <path d="m9 12 2 2 4-4"></path>
+            </svg>
+            <h3 class="text-lg font-medium text-gray-700 dark:text-gray-300">¡Estás al día!</h3>
+            <p class="text-gray-500 dark:text-gray-400 max-w-md">Has visto todos los reportes disponibles. Vuelve más tarde para ver nuevas actualizaciones.</p>
+          </div>
+        </div>
       </div>
-
 
   <!-- Image Viewer Modal -->
   <div *ngIf="selectedImage" 

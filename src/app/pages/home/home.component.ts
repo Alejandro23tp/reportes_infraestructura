@@ -47,13 +47,22 @@ export default class HomeComponent implements OnInit {
   comentariosLoading: { [key: number]: boolean } = {};
   imagesLoading = new Map<number, boolean>();
   
-  // Variables para paginación
-  private pageSize = 5;
-  private currentPage = 0;
-  private isLoading = false;
-  private allReportsLoaded = false;
+  // Variables para scroll infinito
+  currentPage = 1;
+  totalPages = 1;
+  pageSize = 10;
+  totalItems = 0;
+  isLoading = false;
+  isLoadingMore = false;
   private loadedReportIds = new Set<number>();
-  private totalReports = 0;
+  private scrollContainer: HTMLElement | null = null;
+  private readonly SCROLL_THRESHOLD = 500; // Píxeles desde el fondo para cargar más
+  private scrollHandler = this.onScroll.bind(this);
+  
+  // Método para verificar si hay más páginas por cargar
+  get hasMorePages(): boolean {
+    return this.currentPage < this.totalPages && !this.isLoadingMore;
+  }
 
   // Variables para el visor de imágenes
   selectedImage: string | null = null;
@@ -68,7 +77,7 @@ export default class HomeComponent implements OnInit {
   ) {}
 
   async ngOnInit() {
-    await this.getInitialReports();
+    await this.loadInitialData();
     this.authService.getUser().subscribe(user => {
       if (user) {
         this.userName = user.nombre || '';
@@ -76,66 +85,138 @@ export default class HomeComponent implements OnInit {
         this.isAdmin = user.rol === 'admin';
       }
     });
-    this.setupInfiniteScroll();
+    
+    // Configurar el scroll después de la renderización inicial
+    setTimeout(() => this.setupScrollListener(), 0);
+  }
+  
+  ngOnDestroy() {
+    this.removeScrollListener();
   }
 
-  private async getInitialReports() {
-    try {
-      this.currentPage = 1;
-      this.loading = true;
-      const res: any = await firstValueFrom(this.reportesService.getReportsWithInteractions({page: this.currentPage}));
-      
-      if (res.data && res.data.length > 0) {
-        this.processNewReports(res.data);
-        this.totalReports = res.pagination?.total || 0;
-      }
-      
-      this.loading = false;
-    } catch (error) {
-      console.error('Error al obtener los reportes:', error);
-      this.loading = false;
-    }
-  }
-
-  private setupInfiniteScroll() {
-    window.addEventListener('scroll', () => {
-      if (this.isLoading || this.allReportsLoaded) return;
-
-      const scrollHeight = document.documentElement.scrollHeight;
-      const scrollTop = window.scrollY;
-      const clientHeight = document.documentElement.clientHeight;
-
-      if (scrollHeight - scrollTop <= clientHeight + 100) {
-        this.loadMoreReports();
-      }
-    });
-  }
-
-  private async loadMoreReports(): Promise<void> {
-    if (this.isLoading || this.allReportsLoaded) return;
-
+  private async loadInitialData(): Promise<void> {
+    if (this.isLoading) return;
+    
     this.isLoading = true;
+    this.listReports = [];
+    this.loadedReportIds.clear();
+    this.currentPage = 0; // Empezamos en 0 para que la primera carga sea la 1
+    
+    await this.loadMoreReports();
+    this.isLoading = false;
+  }
+  
+  private async loadMoreReports(): Promise<void> {
+    // Verificar si ya estamos cargando o no hay más páginas
+    if (this.isLoadingMore || !this.hasMorePages) {
+      console.log('No se cargarán más reportes. isLoadingMore:', this.isLoadingMore, 'hasMorePages:', this.hasMorePages);
+      return;
+    }
+    
+    // Calcular la siguiente página
     const nextPage = this.currentPage + 1;
-
+    console.log('Cargando página', nextPage, 'de', this.totalPages);
+    
+    this.isLoadingMore = true;
+    
     try {
+      // Mostrar el spinner de carga
+      this.isLoading = true;
+      
+      // Hacer la petición al servidor
       const res = await firstValueFrom(
         this.reportesService.getReportsWithInteractions({ page: nextPage })
-      ) as { data: any[] };
+      ) as { 
+        data: any[], 
+        pagination: { 
+          total: number, 
+          current_page: number, 
+          last_page: number,
+          per_page: number
+        } 
+      };
       
-      if (res?.data?.length > 0) {
-        this.processNewReports(res.data);
-        this.currentPage = nextPage;
+      console.log('Respuesta del servidor:', res);
+      
+      if (res?.data && res.data.length > 0) {
+        console.log(`Se recibieron ${res.data.length} reportes`);
         
-        if (this.listReports.length >= this.totalReports || res.data.length === 0) {
-          this.allReportsLoaded = true;
-        }
+        // Procesar los nuevos reportes (sin limpiar los existentes)
+        this.processNewReports(res.data);
+        
+        // Actualizar la información de paginación
+        this.currentPage = res.pagination.current_page;
+        this.totalPages = res.pagination.last_page;
+        this.totalItems = res.pagination.total;
+        this.pageSize = res.pagination.per_page;
+        
+        console.log('Paginación actualizada:', {
+          currentPage: this.currentPage,
+          totalPages: this.totalPages,
+          totalItems: this.totalItems
+        });
       } else {
-        this.allReportsLoaded = true;
+        console.log('No hay más reportes para cargar');
       }
     } catch (error) {
       console.error('Error al cargar más reportes:', error);
+      // Aquí podrías mostrar un mensaje de error al usuario
     } finally {
       this.isLoading = false;
+      this.isLoadingMore = false;
+      
+      // Verificar si necesitamos cargar más contenido
+      setTimeout(() => this.checkScroll(), 100);
+    }
+  }
+  
+  private setupScrollListener(): void {
+    // Usar el contenedor principal o el body
+    this.scrollContainer = document.documentElement || document.body;
+    
+    // Asegurarse de que el contenedor tenga la altura suficiente para hacer scroll
+    this.adjustContainerHeight();
+    
+    // Agregar el event listener
+    window.addEventListener('scroll', this.scrollHandler, { passive: true });
+    
+    // Forzar una verificación inicial
+    setTimeout(() => this.checkScroll(), 300);
+  }
+  
+  private adjustContainerHeight(): void {
+    // Asegurarse de que el body tenga al menos el 100% de la altura de la ventana
+    document.body.style.minHeight = '100vh';
+  }
+  
+  private removeScrollListener(): void {
+    window.removeEventListener('scroll', this.scrollHandler);
+  }
+  
+  private onScroll(): void {
+    this.checkScroll();
+  }
+  
+  private checkScroll(): void {
+    if (this.isLoadingMore || !this.hasMorePages) {
+      console.log('checkScroll: No se verificará el scroll. isLoadingMore:', this.isLoadingMore, 'hasMorePages:', this.hasMorePages);
+      return;
+    }
+    
+    try {
+      const scrollPosition = window.innerHeight + window.scrollY;
+      const bodyHeight = document.body.offsetHeight;
+      const threshold = 500; // Aumentar el umbral para mayor confiabilidad
+      
+      console.log('Verificando scroll - Posición:', scrollPosition, 'Altura total:', bodyHeight, 'Umbral:', bodyHeight - threshold);
+      
+      // Verificar si estamos cerca del final de la página
+      if (scrollPosition >= bodyHeight - threshold) {
+        console.log('Umbral alcanzado, cargando más reportes...');
+        this.loadMoreReports();
+      }
+    } catch (error) {
+      console.error('Error al verificar el scroll:', error);
     }
   }
 
@@ -667,7 +748,7 @@ export default class HomeComponent implements OnInit {
       this.listReports = [reporteProcesado, ...this.listReports];
       
       // Update the total reports counter
-      this.totalReports++;
+      //this.totalReports++;
     } catch (error) {
       console.error('Error al obtener los datos del reporte:', error);
       // In case of error, create a basic report with the available information
@@ -690,7 +771,7 @@ export default class HomeComponent implements OnInit {
       this.processReportData(reporteBasico);
       this.precargarImagen(reporteBasico);
       this.listReports = [reporteBasico, ...this.listReports];
-      this.totalReports++;
+      //this.totalReports++;
     }
   }
 
