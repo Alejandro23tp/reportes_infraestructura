@@ -4,9 +4,9 @@ import { RegisterComponent } from './pages/register/register.component';
 import HomeComponent from './pages/home/home.component';
 import { AuthGuard } from './guards/auth.guard';
 import { ResetPasswordComponent } from './pages/reset-password/reset-password.component';
-import { NotificacionesComponent } from './pages/notificaciones/notificaciones.component';
 import { AjustesComponent } from './pages/ajustes/ajustes.component';
 import { AdminComponent } from './pages/admin/admin.component';
+import { CentronotificacionesComponent } from './components/admin/centronotificaciones/centronotificaciones.component';
 
 
 export const routes: Routes = [
@@ -33,11 +33,6 @@ export const routes: Routes = [
     component: ResetPasswordComponent
   },
   {
-    path: 'notificaciones',
-    component: NotificacionesComponent,
-    canActivate: [AuthGuard]
-  },
-  {
     path: 'ajustes',
     component: AjustesComponent,
     canActivate: [AuthGuard]  
@@ -45,6 +40,11 @@ export const routes: Routes = [
   {
     path: 'admin',
     component: AdminComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'centronotificaciones',
+    component: CentronotificacionesComponent,
     canActivate: [AuthGuard]
   },
   {

@@ -1,0 +1,110 @@
+<div class="p-4 md:p-6 max-w-4xl mx-auto">
+  <!-- Encabezado -->
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Centro de Notificaciones</h1>
+    <div class="flex items-center space-x-2">
+      <span *ngIf="contadorNoLeidas() > 0" 
+            class="px-3 py-1 text-sm font-medium rounded-full"
+            [ngClass]="getClaseContador()">
+        {{ contadorNoLeidas() }} {{ contadorNoLeidas() === 1 ? 'sin leer' : 'sin leer' }}
+      </span>
+    </div>
+  </div>
+
+  <!-- Sin notificaciones -->
+  <div *ngIf="notificaciones.length === 0" 
+       class="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow">
+    <i class="fas fa-bell-slash text-4xl text-gray-400 mb-4"></i>
+    <p class="text-gray-600 dark:text-gray-300">No hay notificaciones</p>
+  </div>
+
+  <!-- Acciones -->
+  <div class="flex justify-end space-x-2 mb-4">
+    <button (click)="marcarTodasComoLeidas()" 
+            [disabled]="contadorNoLeidas() === 0"
+            class="px-3 py-1 text-sm font-medium rounded-md"
+            [ngClass]="{
+              'bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-300 dark:hover:bg-blue-800': contadorNoLeidas() > 0,
+              'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500': contadorNoLeidas() === 0
+            }">
+      Marcar todas como leídas
+    </button>
+    <button (click)="eliminarTodasLasNotificaciones()" 
+            [disabled]="notificaciones.length === 0"
+            class="px-3 py-1 text-sm font-medium rounded-md"
+            [ngClass]="{
+              'bg-red-100 text-red-800 hover:bg-red-200 dark:bg-red-900 dark:text-red-300 dark:hover:bg-red-800': notificaciones.length > 0,
+              'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500': notificaciones.length === 0
+            }">
+      <i class="fas fa-trash-alt mr-1"></i> Limpiar todo
+    </button>
+  </div>
+
+  <!-- Lista de notificaciones -->
+  <div class="space-y-3">
+    <div *ngFor="let notif of notificaciones" 
+         (click)="marcarComoLeida(notif, $event)"
+         class="relative p-4 bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-shadow cursor-pointer"
+         [class.border-l-4]="!notif.leida"
+         [class.border-red-500]="!notif.leida && notif.urgencia === 'critico'"
+         [class.border-yellow-500]="!notif.leida && notif.urgencia === 'alta'"
+         [class.border-blue-500]="!notif.leida && notif.urgencia === 'media'"
+         [class.border-green-500]="!notif.leida && notif.urgencia === 'baja'">
+      
+      <!-- Indicador de urgencia -->
+      <div class="absolute left-0 top-0 bottom-0 w-1 rounded-l" 
+           [ngClass]="{
+             'bg-red-500': notif.urgencia === 'critico',
+             'bg-yellow-500': notif.urgencia === 'alta',
+             'bg-blue-500': notif.urgencia === 'media',
+             'bg-green-500': notif.urgencia === 'baja'
+           }">
+      </div>
+      
+      <div class="flex items-start">
+        <!-- Icono de notificación -->
+        <div class="flex-shrink-0 mr-3 mt-0.5">
+          <i [class]="getUrgenciaIcon(notif.urgencia) + ' text-lg'"
+             [ngClass]="{
+               'text-red-500': notif.urgencia === 'critico',
+               'text-yellow-500': notif.urgencia === 'alta',
+               'text-blue-500': notif.urgencia === 'media',
+               'text-green-500': notif.urgencia === 'baja'
+             }"></i>
+        </div>
+        
+        <!-- Contenido -->
+        <div class="flex-1 min-w-0">
+          <div class="flex justify-between items-start">
+            <h3 class="text-base font-medium text-gray-900 dark:text-white">
+              {{ notif.titulo }}
+            </h3>
+            <span class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap ml-2">
+              {{ getTimeAgo(notif.fecha) }}
+            </span>
+          </div>
+          
+          <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+            {{ notif.mensaje }}
+          </p>
+          
+          <!-- Badge de urgencia -->
+          <div class="mt-2">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                  [ngClass]="getUrgenciaClass(notif.urgencia)">
+              {{ notif.urgencia | titlecase }}
+            </span>
+          </div>
+        </div>
+        
+        <!-- Indicador de no leída -->
+        <div *ngIf="!notif.leida" class="ml-2">
+          <span class="flex h-2 w-2">
+            <span class="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-blue-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

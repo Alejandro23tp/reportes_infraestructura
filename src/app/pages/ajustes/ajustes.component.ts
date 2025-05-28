@@ -48,14 +48,6 @@ export class AjustesComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.loadDevices();
     this.checkFcmToken();
-    
-    // Escuchar mensajes en primer plano
-    if (this.messaging) {
-      onMessage(this.messaging, (payload) => {
-        console.log('Mensaje recibido:', payload);
-        // Aquí puedes manejar la notificación en primer plano
-      });
-    }
   }
   
   private async checkFcmToken() {
