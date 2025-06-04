@@ -30,8 +30,22 @@ export class NotificacionesService implements OnDestroy {
     this.currentDeviceId = localStorage.getItem('device_id') || this.generateDeviceId();
     localStorage.setItem('device_id', this.currentDeviceId);
     
-    // Initialize Firebase Messaging
+    // Inicializar Firebase Messaging
     this.initializeMessaging();
+    
+    // Verificar el token al iniciar
+    this.initializeToken();
+  }
+
+  private async initializeToken() {
+    try {
+      const token = await this.getFCMToken();
+      if (token) {
+        await this.updateServerToken(token);
+      }
+    } catch (error) {
+      console.error('Error al inicializar el token FCM:', error);
+    }
   }
 
   private async initializeMessaging() {
@@ -52,8 +66,8 @@ export class NotificacionesService implements OnDestroy {
 
     // Escuchar mensajes entrantes
     onMessage(this.messaging, (payload) => {
-      console.log('Mensaje recibido:', payload);
-      // Aquí puedes manejar los mensajes en primer plano
+      console.log('Mensaje recibido en servicio:', payload);
+      this.mostrarNotificacionNativa(payload);
     });
 
     // Verificar el token al iniciar
@@ -67,7 +81,7 @@ export class NotificacionesService implements OnDestroy {
     const observer = {
       next: (token: string | null) => {
         if (token) {
-          console.log('Nuevo token generado');
+          console.log('Token FCM obtenido');
           this.updateServerToken(token);
         }
       },
@@ -182,26 +196,52 @@ export class NotificacionesService implements OnDestroy {
     if (!token) {
       throw new Error('No FCM token provided');
     }
-    
-    const userAgent = navigator.userAgent;
-    
     try {
-      const response = await this.http.post(
+      if (!this.messaging) {
+        console.error('Firebase Messaging no está disponible');
+        return false;
+      }
+
+      // Solicitar permiso para notificaciones
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        console.warn('Permiso de notificación denegado');
+        return false;
+      }
+
+      // Obtener el token FCM
+      const fcmToken = await getToken(this.messaging, {
+        vapidKey: environment.vapidKey
+      });
+
+      if (!fcmToken) {
+        console.error('No se pudo obtener el token FCM');
+        return false;
+      }
+
+      console.log('Token FCM obtenido:', fcmToken ? '***' + fcmToken.substring(fcmToken.length - 8) : 'null');
+      
+      // Registrar el token en el servidor
+      const deviceId = this.getCurrentDeviceId();
+      const userAgent = navigator.userAgent;
+      const response = await this.http.post<any>(
         `${environment.urlApiImages}api/subscribe`,
         { 
-          token,
+          token: fcmToken, 
           dispositivo_id: deviceId,
           dispositivo_nombre: userAgent,
           timestamp: new Date().toISOString()
         }
       ).toPromise();
       
-      // Store the token in localStorage for future reference
-      localStorage.setItem('fcm_token', token);
-      return response;
+      if (response && response.success) {
+        localStorage.setItem('fcm_token', fcmToken);
+        return true;
+      }
+      return false;
     } catch (error) {
-      console.error('Error in requestPermission:', error);
-      throw error;
+      console.error('Error al suscribirse a notificaciones:', error);
+      return false;
     }
   }
 
@@ -229,5 +269,79 @@ export class NotificacionesService implements OnDestroy {
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  private extraerUrgencia(cuerpo: string): 'baja' | 'media' | 'alta' | 'critico' {
+    const cuerpoLower = cuerpo.toLowerCase();
+    if (cuerpoLower.includes('crítico') || cuerpoLower.includes('critico')) return 'critico';
+    if (cuerpoLower.includes('alta')) return 'alta';
+    if (cuerpoLower.includes('media')) return 'media';
+    return 'baja';
+  }
+
+      // Configurar el listener de mensajes
+  private mostrarNotificacionNativa(payload: any) {
+        console.log('Mensaje recibido:', payload);
+        
+        const notificacion = {
+          titulo: payload.notification?.title || 'Nueva notificación',
+          mensaje: payload.notification?.body || 'Tienes una nueva notificación',
+          urgencia: this.extraerUrgencia(payload.notification?.body || '')
+        };
+        
+        // Mostrar notificación nativa si está permitido
+        if (payload.notification && Notification.permission === 'granted') {
+          // Verificar si el navegador está en segundo plano
+          const isBackground = document.visibilityState !== 'visible';
+          
+          // Configuración común para la notificación
+          const notificationOptions: NotificationOptions = {
+            body: notificacion.mensaje,
+            // Hacer que la notificación sea persistente
+            requireInteraction: true, // La notificación no se cierra automáticamente
+            // Agregar un tag único para agrupar notificaciones similares
+            tag: 'notificacion-' + Date.now(),
+            // icon: '/assets/icons/icon-192x192.png'
+          };
+          
+          // Mostrar notificación
+          const notification = new Notification(notificacion.titulo, notificationOptions);
+          
+          // Manejar clic en la notificación
+          notification.onclick = (event) => {
+            event.preventDefault();
+            window.focus();
+            notification.close();
+          };
+          
+          // Opcional: Cerrar la notificación después de un tiempo más largo (30 segundos)
+          // solo como medida de seguridad para evitar notificaciones huérfanas
+          setTimeout(() => {
+            try {
+              notification.close();
+            } catch (e) {
+              console.log('No se pudo cerrar la notificación:', e);
+            }
+          }, 30000);
+        }
+      }
+
+  checkNotificationPermission(): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      if (!("Notification" in window)) {
+        resolve(false);
+        return;
+      }
+      
+      if (Notification.permission === "granted") {
+        resolve(true);
+      } else if (Notification.permission !== "denied") {
+        Notification.requestPermission().then(permission => {
+          resolve(permission === "granted");
+        });
+      } else {
+        resolve(false);
+      }
+    });
   }
 }

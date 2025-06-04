@@ -30,9 +30,9 @@ export class AjustesComponent implements OnInit, OnDestroy {
   devices$ = new BehaviorSubject<Device[]>([]);
   loading = false;
   error: string | null = null;
-  private messaging: Messaging;
+
   private destroy$ = new Subject<void>();
-  private fcmToken: string | null = null;
+
 
   constructor(
     private authService: AuthService,
@@ -41,33 +41,10 @@ export class AjustesComponent implements OnInit, OnDestroy {
   ) {
     this.isLoggedIn$ = this.authService.isAuthenticated();
     this.notificationStatus$ = this.notificacionesService.checkNotificationStatus();
-    // Inicializar messaging correctamente
-    this.messaging = getMessaging();
   }
 
   ngOnInit() {
     this.loadDevices();
-    this.checkFcmToken();
-  }
-  
-  private async checkFcmToken() {
-    try {
-      // Verificar si ya tenemos un token almacenado
-      this.fcmToken = localStorage.getItem('fcm_token');
-      
-      // Si no hay token, solicitarlo
-      if (!this.fcmToken && this.messaging) {
-        this.fcmToken = await getToken(this.messaging, { vapidKey: environment.vapidKey });
-        if (this.fcmToken) {
-          localStorage.setItem('fcm_token', this.fcmToken);
-          // Actualizar el token en el servidor
-          const deviceId = this.notificacionesService.getCurrentDeviceId();
-          await this.notificacionesService.requestPermission(this.fcmToken, deviceId);
-        }
-      }
-    } catch (error) {
-      console.error('Error al verificar el token FCM:', error);
-    }
   }
   
   ngOnDestroy() {
@@ -118,29 +95,17 @@ export class AjustesComponent implements OnInit, OnDestroy {
         return;
       }
 
-      console.log('Solicitando token FCM...');
-      const fcmToken = await getToken(this.messaging, { 
-        vapidKey: environment.vapidKey 
-      }).catch(err => {
-        console.error('Error al obtener token FCM:', err);
-        throw err;
-      });
+      // Usar el servicio para manejar la solicitud de permisos
+      const success = await this.notificacionesService.requestPermission(token, this.getCurrentDeviceId());
       
-      console.log('Token FCM obtenido:', fcmToken ? '***' + fcmToken.substring(fcmToken.length - 8) : 'null');
-      
-      if (!fcmToken) {
-        throw new Error('No se pudo obtener el token FCM');
+      if (success) {
+        // Actualizar el estado
+        this.notificationStatus$ = this.notificacionesService.checkNotificationStatus();
+        await this.loadDevices();
+        this.error = null;
+      } else {
+        throw new Error('No se pudo obtener el permiso para notificaciones');
       }
-
-      const deviceId = this.notificacionesService.getCurrentDeviceId();
-      await this.notificacionesService.requestPermission(fcmToken, deviceId);
-      
-      // Actualizar el estado
-      this.notificationStatus$ = this.notificacionesService.checkNotificationStatus();
-      await this.loadDevices();
-      
-      // Mostrar mensaje de éxito
-      this.error = null;
       
     } catch (error: any) {
       console.error('Error completo al activar notificaciones:', error);
