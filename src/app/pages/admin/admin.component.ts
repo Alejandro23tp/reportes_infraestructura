@@ -9,6 +9,7 @@ import { CategoriasComponent } from '../../components/admin/categorias/categoria
 import { NotificacionesmasivasComponent } from "../../components/admin/notificacionesmasivas/notificacionesmasivas.component";
 import { ExportarComponent } from "../../components/admin/exportar/exportar.component";
 import { NotificacionescorreoComponent } from "../../components/admin/notificacionescorreo/notificacionescorreo.component";
+import { CentronotificacionesComponent } from "../../components/admin/centronotificaciones/centronotificaciones.component";
 
 @Component({
   selector: 'app-admin',
@@ -22,7 +23,8 @@ import { NotificacionescorreoComponent } from "../../components/admin/notificaci
     CategoriasComponent,
     NotificacionesmasivasComponent,
     ExportarComponent,
-    NotificacionescorreoComponent
+    NotificacionescorreoComponent,
+    CentronotificacionesComponent
 ],
   templateUrl: './admin.component.html',
   styleUrl: './admin.component.scss'
@@ -67,6 +69,11 @@ export class AdminComponent {
         label: 'Notificaciones por Correo', 
         icon: 'pi pi-fw pi-envelope',
         command: () => this.setActiveItem(this.items[6])
+      },
+      { 
+        label: 'Centro de Notificaciones', 
+        icon: 'pi pi-fw pi-bell',
+        command: () => this.setActiveItem(this.items[7])
       }
     ];
 

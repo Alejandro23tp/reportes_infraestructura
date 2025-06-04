@@ -1,6 +1,6 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, of, from, Subject } from 'rxjs';
+import { BehaviorSubject, Observable, of, from, Subject, ReplaySubject } from 'rxjs';
 import { map, catchError, takeUntil, switchMap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { getMessaging, getToken, onMessage, deleteToken, isSupported, Messaging } from '@angular/fire/messaging';
@@ -22,6 +22,13 @@ export class NotificacionesService implements OnDestroy {
   private messaging: Messaging | null = null;
   private tokenRefreshInProgress = false;
   private destroy$ = new Subject<void>();
+  
+  // Subject para emitir notificaciones a los componentes suscritos
+  public notificacionRecibida$ = new ReplaySubject<{
+    titulo: string;
+    mensaje: string;
+    urgencia: 'bajo' | 'medio' | 'alto' | 'critico';
+  }>(1);
 
   constructor(
     private http: HttpClient,
@@ -271,26 +278,29 @@ export class NotificacionesService implements OnDestroy {
     this.destroy$.complete();
   }
 
-  private extraerUrgencia(cuerpo: string): 'baja' | 'media' | 'alta' | 'critico' {
+  private extraerUrgencia(cuerpo: string): 'bajo' | 'medio' | 'alto' | 'critico' {
     const cuerpoLower = cuerpo.toLowerCase();
     if (cuerpoLower.includes('crítico') || cuerpoLower.includes('critico')) return 'critico';
-    if (cuerpoLower.includes('alta')) return 'alta';
-    if (cuerpoLower.includes('media')) return 'media';
-    return 'baja';
+    if (cuerpoLower.includes('alto')) return 'alto';
+    if (cuerpoLower.includes('medio')) return 'medio';
+    return 'bajo';
   }
 
       // Configurar el listener de mensajes
   private mostrarNotificacionNativa(payload: any) {
-        console.log('Mensaje recibido:', payload);
-        
-        const notificacion = {
-          titulo: payload.notification?.title || 'Nueva notificación',
-          mensaje: payload.notification?.body || 'Tienes una nueva notificación',
-          urgencia: this.extraerUrgencia(payload.notification?.body || '')
-        };
-        
-        // Mostrar notificación nativa si está permitido
-        if (payload.notification && Notification.permission === 'granted') {
+    console.log('Mensaje recibido:', payload);
+    
+    const notificacion = {
+      titulo: payload.notification?.title || 'Nueva notificación',
+      mensaje: payload.notification?.body || 'Tienes una nueva notificación',
+      urgencia: this.extraerUrgencia(payload.notification?.body || '')
+    };
+    
+    // Emitir la notificación a los componentes suscritos
+    this.notificacionRecibida$.next(notificacion);
+    
+    // Mostrar notificación nativa si está permitido
+    if (payload.notification && Notification.permission === 'granted') {
           // Verificar si el navegador está en segundo plano
           const isBackground = document.visibilityState !== 'visible';
           

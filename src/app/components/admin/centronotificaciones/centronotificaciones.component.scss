@@ -1,0 +1,19 @@
+@keyframes ping-slow {
+  0% {
+    transform: scale(0.2);
+    opacity: 0.7; /* Cambiado de 0 a 0.7 para que sea visible desde el inicio */
+  }
+  50% {
+    transform: scale(1.75);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+.animate-ping-slow {
+  animation: ping-slow 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+  animation-delay: 0s; /* Asegurar que comience inmediatamente */
+}
