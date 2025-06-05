@@ -1,18 +1,20 @@
 import { Component, OnInit, OnDestroy, HostBinding, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
-import { NotificacionesService } from '../../../services/notificaciones.service';
+import { NotificacionesService } from '../../services/notificaciones.service';
 
 @Component({
-  selector: 'app-centronotificaciones',
+  selector: 'app-notificacionesbar',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './centronotificaciones.component.html',
-  styleUrls: ['./centronotificaciones.component.scss']
+  templateUrl: './notificacionesbar.component.html',
+  styleUrl: './notificacionesbar.component.scss'
 })
-export class CentronotificacionesComponent implements OnInit, OnDestroy {
-  @HostBinding('class') class = 'h-100';
+export class NotificacionesbarComponent implements OnInit, OnDestroy {
   @ViewChild('alertSound') alertSound!: ElementRef<HTMLAudioElement>;
+  
+  // Control de visibilidad del menú de notificaciones
+  mostrarHistorial = false;
   
   // Estado de la alerta actual
   alertaActiva = false;
@@ -21,7 +23,7 @@ export class CentronotificacionesComponent implements OnInit, OnDestroy {
   alertaUrgencia: 'bajo' | 'medio' | 'alto' | 'critico' = 'bajo';
   
   // Clave para almacenar en localStorage
-  private readonly STORAGE_KEY = 'notificaciones_historial';
+  private readonly STORAGE_KEY = 'notificaciones_historial_bar';
   
   // Historial de notificaciones
   historialNotificaciones: Array<{
@@ -145,6 +147,7 @@ export class CentronotificacionesComponent implements OnInit, OnDestroy {
     const notificacion = this.historialNotificaciones.find(n => n.id === notificacionId);
     if (notificacion) {
       notificacion.leida = true;
+      this.guardarNotificaciones();
       this.cdr.detectChanges();
     }
   }
@@ -177,51 +180,35 @@ export class CentronotificacionesComponent implements OnInit, OnDestroy {
     // Agregar al historial
     this.agregarAlHistorial(notificacionId, titulo, mensaje, urgencia);
     
-    // Pequeño retraso para asegurar que la UI se actualice correctamente
+    // Actualizar estado de la alerta
+    this.alertaActiva = true;
+    this.alertaTitulo = titulo;
+    this.alertaMensaje = mensaje;
+    this.alertaUrgencia = urgencia;
+    
+    // Reproducir sonido de alerta
+    this.reproducirSonido();
+    
+    // Forzar la detección de cambios
+    this.cdr.detectChanges();
+    
+    // Iniciar efecto de parpadeo
+    this.iniciarParpadeo(urgencia);
+    
+    // Cerrar automáticamente después de 10 segundos
     setTimeout(() => {
-      // Actualizar estado de la alerta
-      this.alertaActiva = true;
-      this.alertaTitulo = titulo;
-      this.alertaMensaje = mensaje;
-      this.alertaUrgencia = urgencia;
-      
-      // Reproducir sonido de alerta
-      this.reproducirSonido();
-      
-      // Forzar la detección de cambios inmediatamente
-      this.cdr.detectChanges();
-      
-      // Iniciar efecto de parpadeo
-      this.iniciarParpadeo(urgencia);
-      
-      // Cerrar automáticamente después de 10 segundos
-      setTimeout(() => {
-        this.cerrarAlerta();
-      }, 10000);
-    }, 10); // Un pequeño retraso de 10ms
-  }
-  
-  cerrarAlerta(): void {
-    if (this.alertaActiva) {
-      this.alertaActiva = false;
-      this.detenerParpadeo();
-      
-      // Forzar detección de cambios después de cerrar la alerta
-      this.cdr.detectChanges();
-    }
+      this.cerrarAlerta();
+    }, 10000);
   }
   
   private reproducirSonido(): void {
-    // Verificar si el elemento de audio está disponible
-    if (this.alertSound && this.alertSound.nativeElement) {
-      const audio = this.alertSound.nativeElement;
-      // Reiniciar el audio en caso de que ya esté reproduciéndose
-      audio.pause();
-      audio.currentTime = 0;
-      // Reproducir el sonido
-      audio.play().catch(error => {
-        console.error('Error al reproducir el sonido de alerta:', error);
-      });
+    try {
+      if (this.alertSound && this.alertSound.nativeElement) {
+        this.alertSound.nativeElement.currentTime = 0;
+        this.alertSound.nativeElement.play().catch(e => console.warn('No se pudo reproducir el sonido:', e));
+      }
+    } catch (error) {
+      console.warn('Error al reproducir sonido:', error);
     }
   }
   
@@ -229,28 +216,34 @@ export class CentronotificacionesComponent implements OnInit, OnDestroy {
     // Detener cualquier parpadeo anterior
     this.detenerParpadeo();
     
-    // Configurar el parpadeo según la urgencia
-    const intervalo = this.tiemposParpadeo[urgencia];
-    let parpadeoActivo = false;
+    // Obtener el tiempo de parpadeo según la urgencia
+    const tiempoParpadeo = this.tiemposParpadeo[urgencia];
     
+    // Iniciar el parpadeo
     this.intervaloParpadeo = setInterval(() => {
-      parpadeoActivo = !parpadeoActivo;
-      document.body.style.transition = 'background-color 0.3s';
-      document.body.style.backgroundColor = parpadeoActivo 
-        ? this.coloresFondo[urgencia] 
-        : '';
-      
-      // Forzar detección de cambios en cada intervalo
-      this.cdr.detectChanges();
-    }, intervalo);
+      // La lógica de parpadeo se maneja en el template con clases CSS
+    }, tiempoParpadeo);
   }
   
   private detenerParpadeo(): void {
     if (this.intervaloParpadeo) {
       clearInterval(this.intervaloParpadeo);
       this.intervaloParpadeo = null;
-      document.body.style.backgroundColor = '';
-      document.body.style.transition = '';
     }
+  }
+  
+  cerrarAlerta(): void {
+    this.alertaActiva = false;
+    this.detenerParpadeo();
+    this.cdr.detectChanges();
+  }
+  
+  // Método para probar notificaciones
+  probarNotificacion(urgencia: 'bajo' | 'medio' | 'alto' | 'critico' = 'bajo'): void {
+    this.mostrarAlerta(
+      `Notificación de prueba (${urgencia})`,
+      'Esta es una notificación de prueba para verificar el funcionamiento del sistema.',
+      urgencia
+    );
   }
 }

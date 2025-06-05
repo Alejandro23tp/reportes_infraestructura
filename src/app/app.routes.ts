@@ -7,6 +7,7 @@ import { ResetPasswordComponent } from './pages/reset-password/reset-password.co
 import { AjustesComponent } from './pages/ajustes/ajustes.component';
 import { AdminComponent } from './pages/admin/admin.component';
 import { CentronotificacionesComponent } from './components/admin/centronotificaciones/centronotificaciones.component';
+import { NotificacionesbarComponent } from './pages/notificacionesbar/notificacionesbar.component';
 
 
 export const routes: Routes = [
@@ -45,6 +46,11 @@ export const routes: Routes = [
   {
     path: 'centronotificaciones',
     component: CentronotificacionesComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'notificacionesbar',
+    component: NotificacionesbarComponent,
     canActivate: [AuthGuard]
   },
   {
