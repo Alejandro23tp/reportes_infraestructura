@@ -46,85 +46,113 @@
       <div class="hidden md:flex items-center space-x-4">
 
         <!-- Botón de Notificaciones -->
-        <div class="relative group z-[2000]">
-          <button class="text-white/70 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10">
+        <div class="relative notification-container" (click)="$event.stopPropagation()">
+          <button 
+            (click)="toggleNotifications($event)" 
+            class="relative text-white/70 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10"
+            [class.text-white]="showNotifications"
+          >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
             </svg>
+            <span *ngIf="noLeidasCount > 0" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+              {{ noLeidasCount }}
+            </span>
           </button>
           
           <!-- Dropdown de Notificaciones -->
-          <div class="absolute right-0 top-full mt-2 w-80 bg-gray-800/95 backdrop-blur-xl rounded-xl shadow-2xl border border-white/10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 ease-in-out z-[2000]">
+          <div 
+            *ngIf="showNotifications"
+            class="absolute right-0 top-full mt-2 w-80 bg-gray-800/95 backdrop-blur-xl rounded-xl shadow-2xl border border-white/10 z-[2000]"
+            [class.opacity-0]="!showNotifications"
+            [class.invisible]="!showNotifications"
+            [class.opacity-100]="showNotifications"
+            [class.visible]="showNotifications">
             <div class="p-2">
               <div class="flex justify-between items-center px-4 py-2">
                 <h3 class="text-white font-medium">Notificaciones</h3>
-                <button class="text-xs text-blue-400 hover:text-blue-300">Marcar todas como leídas</button>
+                <button 
+                  *ngIf="noLeidasCount > 0"
+                  (click)="marcarTodasComoLeidas($event)" 
+                  class="text-xs text-blue-400 hover:text-blue-300">
+                  Marcar todas como leídas
+                </button>
               </div>
               
               <!-- Lista de notificaciones -->
               <div class="max-h-80 overflow-y-auto">
-                <!-- Notificación 1 -->
-                <div class="px-4 py-3 hover:bg-white/10 transition-colors border-l-2 border-blue-500">
-                  <div class="flex items-start">
-                    <div class="flex-shrink-0 mr-3">
-                      <div class="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
-                          <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
-                        </svg>
-                      </div>
-                    </div>
-                    <div>
-                      <p class="text-sm text-white">Nuevo reporte creado en la zona norte</p>
-                      <p class="text-xs text-gray-400 mt-1">Hace 5 minutos</p>
-                    </div>
-                  </div>
+                <!-- Estado de carga -->
+                <div *ngIf="loading" class="p-4 text-center">
+                  <div class="inline-block animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+                  <p class="text-sm text-gray-400 mt-2">Cargando notificaciones...</p>
                 </div>
                 
-                <!-- Notificación 2 -->
-                <div class="px-4 py-3 hover:bg-white/10 transition-colors">
-                  <div class="flex items-start">
-                    <div class="flex-shrink-0 mr-3">
-                      <div class="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-500" viewBox="0 0 20 20" fill="currentColor">
-                          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                        </svg>
-                      </div>
-                    </div>
-                    <div>
-                      <p class="text-sm text-white">Reporte #1234 ha sido actualizado</p>
-                      <p class="text-xs text-gray-400 mt-1">Hace 30 minutos</p>
-                    </div>
-                  </div>
+                <!-- Sin notificaciones -->
+                <div *ngIf="!loading && notificaciones.length === 0" class="p-4 text-center">
+                  <p class="text-sm text-gray-400">No hay notificaciones nuevas</p>
                 </div>
                 
-                <!-- Notificación 3 -->
-                <div class="px-4 py-3 hover:bg-white/10 transition-colors">
-                  <div class="flex items-start">
-                    <div class="flex-shrink-0 mr-3">
-                      <div class="w-8 h-8 rounded-full bg-yellow-500/20 flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
-                          <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                        </svg>
+                <!-- Lista de notificaciones dinámicas -->
+                <ng-container *ngIf="!loading && notificaciones.length > 0">
+                  <div 
+                    *ngFor="let notificacion of notificaciones; trackBy: trackByNotificacion"
+                    (click)="marcarComoLeida(notificacion, $event)"
+                    class="px-4 py-3 hover:bg-white/10 transition-colors cursor-pointer"
+                    [class.border-l-2]="!notificacion.leido"
+                    [class.border-blue-500]="!notificacion.leido">
+                    <div class="flex items-start">
+                      <div class="flex-shrink-0 mr-3">
+                        <div 
+                          class="w-8 h-8 rounded-full flex items-center justify-center"
+                          [ngClass]="{
+                            'bg-blue-500/20': !notificacion.leido,
+                            'bg-gray-600/20': notificacion.leido
+                          }">
+                          <svg 
+                            xmlns="http://www.w3.org/2000/svg" 
+                            class="h-4 w-4" 
+                            viewBox="0 0 20 20" 
+                            fill="currentColor"
+                            [class.text-blue-500]="!notificacion.leido"
+                            [class.text-gray-500]="notificacion.leido">
+                            <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
+                          </svg>
+                        </div>
+                      </div>
+                      <div class="flex-1">
+                        <p 
+                          class="text-sm"
+                          [class.text-white]="!notificacion.leido"
+                          [class.text-gray-400]="notificacion.leido">
+                          {{ notificacion.titulo }}
+                        </p>
+                        <p class="text-xs text-gray-500 mt-1">
+                          {{ notificacion.mensaje }}
+                        </p>
+                        <p class="text-xs text-gray-500 mt-1">
+                          {{ formatearFecha(notificacion.created_at) }}
+                        </p>
                       </div>
                     </div>
-                    <div>
-                      <p class="text-sm text-white">Alerta de inundación en zona sur</p>
-                      <p class="text-xs text-gray-400 mt-1">Hace 2 horas</p>
-                    </div>
                   </div>
-                </div>
+                </ng-container>
               </div>
               
-              <!-- Ver todas -->
+              <!-- Ver todas las notificaciones -->
               <div class="px-4 py-2 border-t border-white/10 mt-2">
-                <a href="#" class="text-sm text-blue-400 hover:text-blue-300 block text-center">Ver todas las notificaciones</a>
+                <a 
+                  routerLink="/notificaciones" 
+                  (click)="showNotifications = false"
+                  class="text-sm text-blue-400 hover:text-blue-300 block text-center">
+                  Ver todas las notificaciones
+                </a>
               </div>
             </div>
           </div>
         </div>
 
-          <!-- Menú de Usuario -->
-          <div class="relative group z-[2000]">
+        <!-- Menú de Usuario -->
+        <div class="relative group z-[2000]">
             <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-600 to-pink-600 flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-white/30 transition-all">
               <span class="text-white text-sm font-bold">{{ userName[0].toUpperCase() }}</span>
             </div>
@@ -170,8 +198,6 @@
             </div>
           </div>
         </div>
-
-        
+      </div>
     </div>
-  </div>
 </header>

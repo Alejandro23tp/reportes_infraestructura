@@ -1,0 +1,97 @@
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 p-2 sm:p-4 pt-2 sm:pt-4 md:pt-16"> <!-- Espaciado reducido en móvil -->
+  <div class="max-w-4xl mx-auto">
+    <!-- Encabezado mejorado para móvil -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6  text-white p-3 sm:p-4 rounded-lg">
+      <h1 class="text-xl sm:text-2xl md:text-3xl font-bold flex items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
+        </svg>
+        Notificaciones
+      </h1>
+      
+      <div class="flex items-center mt-2 sm:mt-0">
+        <span *ngIf="noLeidasCount > 0" class="bg-white/20 text-white text-sm font-medium px-2.5 py-0.5 rounded-full mr-2">
+          {{ noLeidasCount }} sin leer
+        </span>
+        <button 
+          *ngIf="noLeidasCount > 0"
+          (click)="marcarTodasComoLeidas()"
+          class="text-sm text-white hover:text-blue-100 hover:underline focus:outline-none"
+        >
+          Marcar todas como leídas
+        </button>
+      </div>
+    </div>
+
+    <!-- Estado de carga -->
+    <div *ngIf="loading" class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 text-center">
+      <div class="flex flex-col items-center justify-center">
+        <div class="w-10 h-10 border-3 border-blue-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+        <p class="text-gray-600 dark:text-gray-300">Cargando notificaciones...</p>
+      </div>
+    </div>
+
+    <!-- Estado de error -->
+    <div *ngIf="error && !loading" class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 mb-4">
+      <div class="flex items-start">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500 mt-0.5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+        </svg>
+        <div class="flex-1">
+          <p class="text-red-700 dark:text-red-300 mb-2 text-sm">{{ error }}</p>
+          <button 
+            (click)="cargarNotificaciones()" 
+            class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded-lg transition-colors focus:outline-none">
+            Reintentar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lista de notificaciones -->
+    <div *ngIf="!loading && !error" class="space-y-3">
+      <!-- Estado vacío -->
+      <div *ngIf="notificaciones.length === 0" class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 text-center">
+        <div class="flex flex-col items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-300 dark:text-gray-600 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+          </svg>
+          <p class="text-gray-600 dark:text-gray-300">No hay notificaciones para mostrar</p>
+        </div>
+      </div>
+
+      <!-- Notificaciones optimizadas para móvil -->
+      <div *ngFor="let notificacion of notificaciones" 
+           (click)="marcarComoLeida(notificacion)"
+           class="bg-white dark:bg-gray-800/95 rounded-lg shadow-md overflow-hidden transition-all hover:shadow-lg"
+           [class.border-l-4]="!notificacion.leido"
+           [class.border-blue-500]="!notificacion.leido">
+        
+        <div class="p-3 sm:p-4">
+          <div class="flex justify-between items-start">
+            <div class="flex-1">
+              <h3 class="font-semibold text-gray-800 dark:text-white flex items-center text-base">
+                {{ notificacion.titulo }}
+                <span *ngIf="!notificacion.leido" class="ml-2 flex h-2 w-2">
+                  <span class="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-blue-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                </span>
+              </h3>
+              <p class="text-gray-600 dark:text-gray-300 mt-1 text-sm">{{ notificacion.mensaje }}</p>
+              
+              <!-- Información del reporte si existe con título -->
+              <div *ngIf="notificacion.reporte?.titulo" class="mt-2 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg text-sm">
+                <span class="font-medium text-gray-700 dark:text-gray-200">Reporte:</span> 
+                <span class="text-gray-600 dark:text-gray-300">{{ notificacion.reporte.titulo }}</span>
+              </div>
+              
+              <div class="mt-2 text-xs text-gray-400 dark:text-gray-500">
+                {{ formatearFecha(notificacion.created_at) }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
