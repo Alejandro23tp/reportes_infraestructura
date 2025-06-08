@@ -1,6 +1,6 @@
 export const environment = {
-    urlApi: 'http://127.0.0.1:8000/api/',
-    urlApiImages: 'http://127.0.0.1:8000/', // Asegúrate de que termine con /
+    urlApi: 'https://report-infra-api.onrender.com/api/', //'http://127.0.0.1:8000/api/',
+    urlApiImages:  'https://report-infra-api.onrender.com/', //http://127.0.0.1:8000/', // Asegúrate de que termine con /
     production: false,
     googleMapsApiKey: import.meta.env.NG_APP_GOOGLE_MAPS_API_KEY,
     firebaseConfig: {
