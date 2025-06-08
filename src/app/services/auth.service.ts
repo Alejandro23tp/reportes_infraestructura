@@ -2,12 +2,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { Router } from '@angular/router';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly API_URL = 'http://localhost:8000/api/auth';
+  private readonly API_URL = environment.urlApi + 'auth'; //'http://localhost:8000/api/auth'
   private isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
   private userSubject = new BehaviorSubject<any>(null);
 
