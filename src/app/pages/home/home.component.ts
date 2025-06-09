@@ -198,15 +198,23 @@ export default class HomeComponent implements OnInit {
   }
   
   private checkScroll(): void {
-    if (this.isLoadingMore || !this.hasMorePages) {
-      console.log('checkScroll: No se verificará el scroll. isLoadingMore:', this.isLoadingMore, 'hasMorePages:', this.hasMorePages);
+    // Verificar si ya estamos cargando o no hay más páginas
+    if (this.isLoadingMore) {
+      console.log('checkScroll: Ya se están cargando más reportes');
+      return;
+    }
+    
+    // Verificar si ya no hay más páginas
+    if (!this.hasMorePages) {
+      console.log('checkScroll: No hay más páginas para cargar');
+      this.removeScrollListener(); // Eliminar el listener si no hay más páginas
       return;
     }
     
     try {
       const scrollPosition = window.innerHeight + window.scrollY;
       const bodyHeight = document.body.offsetHeight;
-      const threshold = 500; // Aumentar el umbral para mayor confiabilidad
+      const threshold = 500; // Umbral de 500px desde el fondo
       
       console.log('Verificando scroll - Posición:', scrollPosition, 'Altura total:', bodyHeight, 'Umbral:', bodyHeight - threshold);
       
