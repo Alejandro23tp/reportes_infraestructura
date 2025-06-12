@@ -24,8 +24,13 @@ export class MobileNavComponent implements OnInit, OnDestroy {
   ngOnInit() {
     document.addEventListener('click', this.onDocumentClick.bind(this));
     
+    // Add debug logging
+    console.log('MobileNavComponent: Subscribing to user changes');
+    
     this.userSubscription = this.authService.getUser().subscribe(user => {
+      console.log('MobileNavComponent: User data received:', user);
       this.currentUser = user;
+      console.log('MobileNavComponent: Current user role:', this.currentUser?.rol); // Note: 'rol' is the correct property based on auth service
     });
   }
 
@@ -68,7 +73,12 @@ export class MobileNavComponent implements OnInit, OnDestroy {
   }
 
   getUserName(): string {
-    return this.currentUser ? this.currentUser.name : 'Usuario';
+    console.log('getUserName called, currentUser:', this.currentUser);
+    if (this.currentUser) {
+      // Check both 'name' and 'nombre' properties since the backend might use either
+      return this.currentUser.name || this.currentUser.nombre || 'Usuario';
+    }
+    return 'Usuario';
   }
 
   getUserEmail(): string {
