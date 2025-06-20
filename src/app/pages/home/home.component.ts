@@ -113,6 +113,13 @@ export default class HomeComponent implements OnInit {
       return;
     }
     
+    // Si no hay más páginas, salir
+    if (this.currentPage >= this.totalPages && this.totalPages > 0) {
+      console.log('Ya se cargaron todas las páginas disponibles');
+      this.removeScrollListener();
+      return;
+    }
+    
     // Calcular la siguiente página
     const nextPage = this.currentPage + 1;
     console.log('Cargando página', nextPage, 'de', this.totalPages);
@@ -157,16 +164,23 @@ export default class HomeComponent implements OnInit {
         });
       } else {
         console.log('No hay más reportes para cargar');
+        // Si no hay datos, actualizamos la paginación para evitar más intentos
+        this.totalPages = 0;
+        this.removeScrollListener();
       }
     } catch (error) {
       console.error('Error al cargar más reportes:', error);
-      // Aquí podrías mostrar un mensaje de error al usuario
+      // En caso de error, asumimos que no hay más páginas para evitar bucles infinitos
+      this.totalPages = 0;
+      this.removeScrollListener();
     } finally {
       this.isLoading = false;
       this.isLoadingMore = false;
       
-      // Verificar si necesitamos cargar más contenido
-      setTimeout(() => this.checkScroll(), 100);
+      // Verificar si necesitamos cargar más contenido solo si hay más páginas
+      if (this.hasMorePages) {
+        setTimeout(() => this.checkScroll(), 100);
+      }
     }
   }
   
@@ -208,6 +222,12 @@ export default class HomeComponent implements OnInit {
     if (!this.hasMorePages) {
       console.log('checkScroll: No hay más páginas para cargar');
       this.removeScrollListener(); // Eliminar el listener si no hay más páginas
+      return;
+    }
+    
+    // Si no hay datos iniciales, no hacemos nada
+    if (this.listReports.length === 0) {
+      console.log('checkScroll: No hay datos iniciales, esperando carga inicial...');
       return;
     }
     

@@ -77,54 +77,52 @@ export class UsuariosComponent implements OnInit {
     this.error = null;
     
     // Crear un objeto de parámetros limpio
-    const params: any = { page: pagina };
+    const params: any = { 
+      page: pagina,
+      per_page: 10,
+      ...this.filtros
+    };
     
-    // Agregar solo los filtros que tengan valor
-    if (this.filtros.search && this.filtros.search.trim() !== '') {
-      // Asegurarse de que el término de búsqueda no esté vacío
-      const searchTerm = this.filtros.search.trim();
-      if (searchTerm) {
-        params.search = searchTerm;
+    // Eliminar propiedades vacías
+    Object.keys(params).forEach(key => {
+      if (params[key] === '' || params[key] === null || params[key] === undefined) {
+        delete params[key];
       }
-    }
-    
-    if (this.filtros.rol && this.filtros.rol !== '') {
-      params.rol = this.filtros.rol;
-    }
-    
-    if (this.filtros.activo !== undefined && this.filtros.activo !== '') {
-      // Asegurarse de que el valor sea numérico (0 o 1)
-      params.activo = this.filtros.activo === '1' ? 1 : 0;
-    }
+    });
     
     console.log('Enviando parámetros de búsqueda al servicio:', params);
     
-    this.adminService.listarUsuarios(params)
-      .pipe(finalize(() => this.loading = false))
-      .subscribe({
-        next: (response) => {
-          console.log('Respuesta del servidor:', response);
-          this.usuarios = response.data;
-          this.paginacion = {
-            current_page: response.current_page,
-            last_page: response.last_page,
-            per_page: response.per_page,
-            total: response.total,
-            first_page_url: response.first_page_url,
-            last_page_url: response.last_page_url,
-            next_page_url: response.next_page_url,
-            prev_page_url: response.prev_page_url,
-            path: response.path,
-            from: response.from,
-            to: response.to
-          };
-        },
-        error: (err) => {
-          this.error = 'Error al cargar los usuarios. Por favor, intente nuevamente.';
-          toast.error(this.error);
-          console.error('Error al cargar usuarios:', err);
-        }
-      });
+    // Desplazarse al inicio de la tabla
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    this.adminService.listarUsuarios(params).subscribe({
+      next: (response) => {
+        console.log('Respuesta del servidor:', response);
+        this.usuarios = response.data || [];
+        this.paginacion = {
+          current_page: response.current_page || 1,
+          last_page: response.last_page || 1,
+          per_page: response.per_page || 10,
+          total: response.total || 0,
+          first_page_url: response.first_page_url || '',
+          last_page_url: response.last_page_url || '',
+          next_page_url: response.next_page_url || null,
+          prev_page_url: response.prev_page_url || null,
+          path: response.path || '',
+          from: response.from || 0,
+          to: response.to || 0
+        };
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error al cargar usuarios:', error);
+        this.loading = false;
+        this.error = 'Error al cargar los usuarios. Por favor, intente nuevamente.';
+        toast.error(this.error);
+        this.usuarios = [];
+        this.paginacion = null;
+      }
+    });
   }
 
   seleccionarUsuario(usuario: Usuario): void {
@@ -226,7 +224,7 @@ export class UsuariosComponent implements OnInit {
         .subscribe({
           next: (response) => {
             this.cargarUsuarios(this.paginacion?.current_page);
-            toast.success(`Usuario ${accion} correctamente`, {
+            toast.success(`Usuario ${nuevoEstado ? 'activado' : 'desactivado'} correctamente`, {
               description: nuevoEstado 
                 ? `El usuario ${usuario.nombre} ha sido activado con éxito`
                 : `El usuario ${usuario.nombre} ha sido desactivado`,
@@ -337,7 +335,7 @@ export class UsuariosComponent implements OnInit {
   }
 
   cambiarPagina(url: string | null): void {
-    if (!url) return;
+    if (!url || this.loading) return;
     
     const urlObj = new URL(url);
     const pagina = urlObj.searchParams.get('page');

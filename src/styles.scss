@@ -4,6 +4,34 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Estilos personalizados para las barras de desplazamiento */
+/* Para navegadores WebKit (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #2d3748; /* Color de fondo de la pista */
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #4a5568; /* Color del thumb */
+  border-radius: 5px;
+  transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #718096; /* Color del thumb al pasar el mouse */
+}
+
+/* Para Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #4a5568 #2d3748;
+}
+
 /* Reset de márgenes y paddings */
 html, body {
   margin: 0;

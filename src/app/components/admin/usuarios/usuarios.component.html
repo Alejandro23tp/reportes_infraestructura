@@ -76,8 +76,14 @@
 
   <!-- Tabla de usuarios con mejor diseño y responsividad -->
   <div class="relative overflow-x-auto shadow-md sm:rounded-lg mb-6">
+    <!-- El indicador de carga ahora está dentro del tbody de la tabla -->
     <!-- Vista tipo tarjeta en móviles -->
     <div class="grid gap-4 sm:hidden">
+      <!-- Indicador de carga para móviles -->
+      <div *ngIf="loading" class="flex justify-center items-center p-4">
+        <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+        <span class="ml-3 text-gray-600 dark:text-gray-300">Cargando usuarios...</span>
+      </div>
       <div *ngFor="let usuario of usuarios" class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 flex flex-col gap-2 border border-gray-200 dark:border-gray-700">
         <div class="flex items-center justify-between">
           <div>
@@ -136,6 +142,15 @@
         </tr>
       </thead>
       <tbody>
+        <!-- Indicador de carga para escritorio -->
+        <tr *ngIf="loading">
+          <td colspan="7" class="px-6 py-8 text-center">
+            <div class="flex justify-center items-center">
+              <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+              <span class="ml-3 text-gray-600 dark:text-gray-300">Cargando usuarios...</span>
+            </div>
+          </td>
+        </tr>
         <tr *ngFor="let usuario of usuarios; let i = index" class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600" [ngClass]="{'bg-gray-50 dark:bg-gray-700': i % 2 === 0}">
           <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">{{ usuario.id }}</td>
           <td class="px-6 py-4">{{ usuario.nombre }}</td>
@@ -240,7 +255,7 @@
   </div>
 
   <!-- Paginación mejorada -->
-  <div *ngIf="paginacion && paginacion.last_page > 1" class="flex justify-center mt-6">
+  <div *ngIf="paginacion && paginacion.last_page > 1" class="flex flex-col sm:flex-row justify-center items-center mt-6 gap-4">
     <nav aria-label="Paginación" class="inline-flex shadow-sm -space-x-px">
       <button [disabled]="!paginacion.prev_page_url" (click)="cambiarPagina(paginacion.prev_page_url)"
         class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-l-md hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
@@ -265,7 +280,7 @@
   </div>
 
   <!-- Modal de edición mejorado -->
-  <div *ngIf="modoEdicion && usuarioSeleccionado" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+  <div *ngIf="modoEdicion && usuarioSeleccionado" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70">
     <div class="relative p-4 w-full max-w-md max-h-full">
       <div class="relative bg-white rounded-lg shadow-xl dark:bg-gray-700 animate-fadeIn">
         <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">

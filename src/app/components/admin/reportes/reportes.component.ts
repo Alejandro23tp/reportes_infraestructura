@@ -4,6 +4,15 @@ import { FormsModule } from '@angular/forms';
 import { AdminService } from '../../../services/admin.service';
 import { toast } from 'ngx-sonner';
 
+interface Pagination {
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+  from?: number;
+  to?: number;
+}
+
 interface Reporte {
   id: number;
   titulo: string;
@@ -52,6 +61,7 @@ interface ItemHistorial {
 export class ReportesComponent implements OnInit {
   @ViewChild('dropdownContainer') dropdownContainer!: ElementRef;
   isDropdownOpen = false;
+  loading: boolean = false; // Para controlar el estado de carga
 
    // Estado para controlar los menús desplegables
    dropdownStates: { [key: number]: boolean } = {}; 
@@ -114,11 +124,13 @@ export class ReportesComponent implements OnInit {
   categorias: any[] = [];
   
   // Paginación
-  paginacion = {
+  paginacion: Pagination = {
     current_page: 1,
     last_page: 1,
     per_page: 15,
-    total: 0
+    total: 0,
+    from: 1,
+    to: 1
   };
 
   // Modal states
@@ -149,6 +161,7 @@ export class ReportesComponent implements OnInit {
 
   // TrackBy function for ngFor to improve performance
   trackByReporteId(index: number, reporte: Reporte): number {
+    // Usar solo el ID para el seguimiento
     return reporte.id;
   }
 
@@ -190,6 +203,8 @@ export class ReportesComponent implements OnInit {
   }
 
   cargarReportes(): void {
+    this.loading = true;
+    
     this.adminService.listarReportes(this.filtros).subscribe({
       next: (response: any) => {
         this.reportes = response.data || [];
@@ -199,9 +214,13 @@ export class ReportesComponent implements OnInit {
           per_page: response.per_page || 15,
           total: response.total || 0
         };
+        this.loading = false;
       },
       error: (error) => {
         console.error('Error al cargar reportes:', error);
+        this.loading = false;
+        // Mostrar mensaje de error al usuario
+        toast.error('Error al cargar los reportes. Por favor, intente nuevamente.');
       }
     });
   }
@@ -336,11 +355,26 @@ export class ReportesComponent implements OnInit {
     });
   }
 
-
-
-
+  // Método para formatear la fecha
   formatearFecha(fecha: string): string {
-    return new Date(fecha).toLocaleString();
+    if (!fecha) return '';
+    const date = new Date(fecha);
+    return date.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  }
+
+  // Método para formatear la hora
+  formatearHora(fecha: string): string {
+    if (!fecha) return '';
+    const date = new Date(fecha);
+    return date.toLocaleTimeString('es-ES', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
   }
 
   parsearComentario(comentario: string | any): any {
@@ -432,8 +466,21 @@ export class ReportesComponent implements OnInit {
 
   // Navegación de páginas
   cambiarPagina(pagina: number): void {
-    this.dropdownStates = {}; // Resetear estados
+    // Evitar recarga innecesaria
+    if (pagina < 1 || pagina > this.paginacion.last_page || pagina === this.filtros.page) {
+      return;
+    }
+
+    // Desplazar al inicio de la tabla
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Resetear estados
+    this.dropdownStates = {};
+    
+    // Actualizar página
     this.filtros.page = pagina;
+    
+    // Cargar reportes
     this.cargarReportes();
   }
 

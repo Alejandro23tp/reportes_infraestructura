@@ -200,7 +200,7 @@ async getCategorias(forzarRecarga: boolean = false) {
     }
   }
 
-async crearReporte() {
+  async crearReporte() {
     console.log('Iniciando creación de reporte...'); 
     
     if (!this.validarFormulario()) {
@@ -220,25 +220,38 @@ async crearReporte() {
     console.log('Ubicación:', this.nuevoReporte.ubicacion);
     console.log('Categoría:', this.nuevoReporte.categoria_id);
 
-    // Agregar campos directamente sin transformaciones
-    formData.append('usuario_id', this.userId);
-    formData.append('imagen', this.nuevoReporte.imagen);
-    formData.append('descripcion', this.nuevoReporte.descripcion);
-    formData.append('ubicacion', this.nuevoReporte.ubicacion);
-    formData.append('estado', this.nuevoReporte.estado);
-    
-    if (this.nuevoReporte.categoria_id) {
-      formData.append('categoria_id', this.nuevoReporte.categoria_id);
-    }
-
     try {
+      // Agregar campos al formData
+      formData.append('usuario_id', this.userId);
+      formData.append('imagen', this.nuevoReporte.imagen);
+      formData.append('descripcion', this.nuevoReporte.descripcion);
+      formData.append('ubicacion', this.nuevoReporte.ubicacion);
+      formData.append('estado', this.nuevoReporte.estado);
+      
+      if (this.nuevoReporte.categoria_id) {
+        formData.append('categoria_id', this.nuevoReporte.categoria_id);
+      }
+
       const response = await firstValueFrom(this.srvReports.crearReporte(formData));
+      
+      // Éxito: limpiar formulario y cerrar
       this.resetForm();
       this.reporteCreado.emit(response.data);
-      this.cerrar();
+      
+      // Pequeño retraso para que el usuario vea el mensaje de éxito
+      setTimeout(() => {
+        this.cerrar();
+      }, 500);
+      
     } catch (error: any) {
-      this.errorMessage = error.message || 'Error al crear el reporte. Inténtalo de nuevo.';
       console.error('Error al crear reporte:', error);
+      this.errorMessage = error.error?.message || 'Error al crear el reporte. Por favor, inténtalo de nuevo.';
+      
+      // Si el error es de validación, mostramos el mensaje específico
+      if (error.error?.errors) {
+        const errors = error.error.errors;
+        this.errorMessage = Object.values(errors).flat().join(' ');
+      }
     } finally {
       this.submitting = false;
     }

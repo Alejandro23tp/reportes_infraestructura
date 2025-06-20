@@ -249,18 +249,18 @@
                           </button>
                         </div>
 
-                        <div class="flex gap-2">
+                        <div class="flex flex-col sm:flex-row gap-2">
                           <input type="text" 
                                  [ngModel]="getComentarioTexto(reporte.id)"
                                  (ngModelChange)="setComentarioTexto(reporte.id, $event)"
                                  [placeholder]="comentarioPadreId ? 'Escribe una respuesta...' : 'Escribe un comentario...'"
-                                 class="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 
-                                        dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500"
+                                 class="flex-1 px-4 py-3 sm:py-2 rounded-lg border border-gray-300 dark:border-gray-600 
+                                        dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 text-base"
                                  (keyup.enter)="enviarComentario(reporte.id)">
                           <button 
                             (click)="enviarComentario(reporte.id)"
-                            class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 
-                                   transition-colors duration-200">
+                            class="mt-1 sm:mt-0 py-3 sm:py-2 px-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 
+                                   transition-colors duration-200 text-base font-medium">
                             {{ comentarioPadreId ? 'Responder' : 'Comentar' }}
                           </button>
                         </div>
@@ -268,33 +268,36 @@
 
                       <!-- Lista de comentarios -->
                       <div *ngFor="let comentario of comentariosPrincipales[reporte.id]" 
-                           class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
-                        <div class="flex justify-between items-start">
-                          <div class="flex-1">
-                            <div class="flex items-center gap-2">
-                              <div class="font-medium text-gray-900 dark:text-white">
-                                {{ comentario.usuario?.nombre || 'Usuario anónimo' }}
+                           class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 sm:p-4">
+                        <div class="relative">
+                          <div class="flex flex-col sm:flex-row sm:items-start">
+                            <div class="flex-1 pr-8"> <!-- Añadido padding a la derecha para dejar espacio al botón -->
+                              <div class="flex flex-wrap items-center gap-2">
+                                <div class="font-medium text-gray-900 dark:text-white text-base">
+                                  {{ comentario.usuario?.nombre || 'Usuario anónimo' }}
+                                </div>
+                                <span class="text-xs text-gray-500">{{ comentario.fecha_creacion | date:'short' }}</span>
                               </div>
-                              <span class="text-xs text-gray-500">{{ comentario.fecha_creacion | date:'short' }}</span>
-                            </div>
-                            <p class="text-gray-600 dark:text-gray-300 mt-1">{{ comentario.contenido }}</p>
-                            <div class="flex items-center gap-4 mt-2">
-                              <button 
-                                (click)="responderComentario(comentario)"
-                                class="text-sm text-blue-500 hover:text-blue-600 dark:hover:text-blue-400">
-                                Responder
-                              </button>
-                              <span *ngIf="comentario.respuestas && comentario.respuestas.length > 0" 
-                                    class="text-xs text-gray-500 cursor-pointer hover:underline"
-                                    (click)="toggleRespuestas(comentario.id, reporte.id)">
-                                {{ mostrarRespuestas[comentario.id] ? 'Ocultar respuestas' : 'Ver respuestas' }} ({{ comentario.respuestas.length }})
-                              </span>
+                              <p class="text-gray-600 dark:text-gray-300 mt-2 text-base break-words">{{ comentario.contenido }}</p>
+                              <div class="flex flex-wrap items-center gap-4 mt-3">
+                                <button 
+                                  (click)="responderComentario(comentario)"
+                                  class="text-sm sm:text-base text-blue-500 hover:text-blue-600 dark:hover:text-blue-400 py-1">
+                                  Responder
+                                </button>
+                                <span *ngIf="comentario.respuestas && comentario.respuestas.length > 0" 
+                                      class="text-xs sm:text-sm text-gray-500 cursor-pointer hover:underline py-1"
+                                      (click)="toggleRespuestas(comentario.id, reporte.id)">
+                                  {{ mostrarRespuestas[comentario.id] ? 'Ocultar respuestas' : 'Ver respuestas' }} ({{ comentario.respuestas.length }})
+                                </span>
+                              </div>
                             </div>
                           </div>
+                          <!-- Botón de eliminar posicionado absolutamente en la esquina superior derecha -->
                           <button *ngIf="comentario.usuario?.id?.toString() === userId"
                                   (click)="eliminarComentario(reporte.id, comentario.id)"
-                                  class="text-gray-400 hover:text-red-500 ml-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                  class="absolute top-0 right-0 text-gray-400 hover:text-red-500 p-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                               <path d="M3 6h18"/>
                               <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
                               <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
@@ -304,31 +307,34 @@
 
                         <!-- Lista de respuestas -->
                         <div *ngIf="mostrarRespuestas[comentario.id] && comentario.respuestas?.length > 0" 
-                             class="ml-4 pl-4 border-l-2 border-gray-200 dark:border-gray-600 mt-3 space-y-3">
+                             class="ml-2 sm:ml-4 pl-2 sm:pl-4 border-l-2 border-gray-200 dark:border-gray-600 mt-3 space-y-3">
                           <!-- Respuestas existentes -->
                           <div *ngFor="let respuesta of comentario.respuestas"
-                               class="bg-gray-50/50 dark:bg-gray-700/30 rounded-lg p-3">
-                            <div class="flex justify-between items-start">
-                              <div class="flex-1">
-                                <div class="flex items-center gap-2">
-                                  <div class="font-medium text-gray-900 dark:text-white">
-                                    {{ respuesta.usuario?.nombre || 'Usuario' }}
+                               class="bg-gray-50/50 dark:bg-gray-700/30 rounded-lg p-3 sm:p-4">
+                            <div class="relative">
+                              <div class="flex flex-col sm:flex-row sm:items-start">
+                                <div class="flex-1 pr-8"> <!-- Añadido padding a la derecha para dejar espacio al botón -->
+                                  <div class="flex flex-wrap items-center gap-2">
+                                    <div class="font-medium text-gray-900 dark:text-white text-sm sm:text-base">
+                                      {{ respuesta.usuario?.nombre || 'Usuario' }}
+                                    </div>
+                                    <span class="text-xs text-gray-500">{{ respuesta.fecha_creacion | date:'short' }}</span>
                                   </div>
-                                  <span class="text-xs text-gray-500">{{ respuesta.fecha_creacion | date:'short' }}</span>
-                                </div>
-                                <p class="text-gray-600 dark:text-gray-300 mt-1">{{ respuesta.contenido }}</p>
-                                <div class="mt-1">
-                                  <button 
-                                    (click)="responderComentario(comentario)"
-                                    class="text-xs text-blue-500 hover:text-blue-600 dark:hover:text-blue-400">
-                                    Responder
-                                  </button>
+                                  <p class="text-gray-600 dark:text-gray-300 mt-2 text-sm sm:text-base break-words">{{ respuesta.contenido }}</p>
+                                  <div class="mt-2">
+                                    <button 
+                                      (click)="responderComentario(comentario)"
+                                      class="text-xs sm:text-sm text-blue-500 hover:text-blue-600 dark:hover:text-blue-400 py-1">
+                                      Responder
+                                    </button>
+                                  </div>
                                 </div>
                               </div>
+                              <!-- Botón de eliminar posicionado absolutamente en la esquina superior derecha -->
                               <button *ngIf="respuesta.usuario?.id?.toString() === userId"
                                       (click)="eliminarComentario(reporte.id, respuesta.id)"
-                                      class="text-gray-400 hover:text-red-500 ml-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                      class="absolute top-0 right-0 text-gray-400 hover:text-red-500 p-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                   <path d="M3 6h18"/>
                                   <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
                                   <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
@@ -339,27 +345,30 @@
                         </div>
 
                         <!-- Formulario de respuesta (solo se muestra cuando se hace clic en Responder) -->
-                        <div *ngIf="comentarioPadreId === comentario.id" class="mt-3 ml-4 pl-4 border-l-2 border-blue-200 dark:border-blue-800">
-                          <div class="flex items-start gap-2">
-                            <div class="flex-1">
+                        <div *ngIf="comentarioPadreId === comentario.id" class="mt-3 ml-2 sm:ml-4 pl-2 sm:pl-4 border-l-2 border-blue-200 dark:border-blue-800">
+                          <div class="flex flex-col sm:flex-row items-start gap-2">
+                            <div class="flex-1 w-full">
                               <input type="text" 
                                      [(ngModel)]="comentarioRespuestaTexto"
                                      placeholder="Escribe tu respuesta..."
-                                     class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 
+                                     class="w-full px-3 py-3 sm:py-2 text-base sm:text-sm rounded-lg border border-gray-300 dark:border-gray-600 
                                             dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500"
                                      (keyup.enter)="enviarComentario(reporte.id)">
                             </div>
-                            <button 
-                              (click)="enviarComentario(reporte.id)"
-                              class="px-3 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 
-                                     transition-colors duration-200">
-                              Enviar
-                            </button>
-                            <button 
-                              (click)="cancelarRespuesta()"
-                              class="px-3 py-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                              Cancelar
-                            </button>
+                            <div class="flex gap-2 mt-2 sm:mt-0 w-full sm:w-auto">
+                              <button 
+                                (click)="enviarComentario(reporte.id)"
+                                class="flex-1 sm:flex-none px-4 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 
+                                       transition-colors duration-200 font-medium">
+                                Enviar
+                              </button>
+                              <button 
+                                (click)="cancelarRespuesta()"
+                                class="flex-1 sm:flex-none px-4 py-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 
+                                       border border-gray-200 dark:border-gray-700 rounded-lg">
+                                Cancelar
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>

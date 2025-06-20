@@ -7,6 +7,11 @@ import { throwError } from 'rxjs';
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
   
+  // No aplicar el interceptor a las peticiones de login
+  if (req.url.includes('/auth/login')) {
+    return next(req);
+  }
+  
   const token = authService.getToken();
   if (token) {
     req = req.clone({
@@ -18,7 +23,8 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (error.status === 401) {
+      // Solo manejar errores 401 que no sean de login
+      if (error.status === 401 && !error.url?.includes('/auth/login')) {
         authService.logout();
       }
       return throwError(() => error);
