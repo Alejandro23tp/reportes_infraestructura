@@ -58,15 +58,38 @@ export class NotificacionesService implements OnDestroy {
   private async initializeMessaging() {
     try {
       const isSupportedResult = await isSupported();
+  
       if (isSupportedResult) {
+        // 🛠 Registrar el Service Worker de Firebase
+        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+        console.log('✅ Service Worker de Firebase registrado:', registration);
+  
+        // 📨 Inicializar Firebase Messaging usando ese SW
         this.messaging = getMessaging();
+        onMessage(this.messaging, (payload) => {
+          console.log('📥 Mensaje capturado directamente:', payload);
+          new Notification(payload.notification?.title || 'Notificación', {
+            body: payload.notification?.body || '',
+          });
+        });
+        
+  
+        // 🔁 Asociar el SW a Messaging si está disponible en esta versión
+        if ('useServiceWorker' in this.messaging && typeof this.messaging.useServiceWorker === 'function') {
+          this.messaging.useServiceWorker?.(registration);
+        }
+  
+        // 🎧 Suscripciones y listeners
         this.setupTokenRefreshListener();
         this.checkAndUpdateToken();
+      } else {
+        console.warn('⚠️ Firebase Messaging no es compatible con este navegador.');
       }
     } catch (error) {
-      console.error('Firebase Messaging is not supported', error);
+      console.error('❌ Error al inicializar Firebase Messaging:', error);
     }
   }
+  
 
   private setupTokenRefreshListener() {
     if (!this.messaging) return;
