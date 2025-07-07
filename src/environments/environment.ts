@@ -1,6 +1,6 @@
 export const environment = {
-    urlApi: 'http://18.227.228.44/api/', //'http://127.0.0.1:8000/api/',
-    urlApiImages:  'http://18.227.228.44/', //http://127.0.0.1:8000/',
+    urlApi: 'https://api.iglesiacefed.com/api/',  //'http://18.227.228.44/api/', //'http://127.0.0.1:8000/api/',
+    urlApiImages:  'https://api.iglesiacefed.com/', //http://127.0.0.1:8000/',
     production: false,
     googleMapsApiKey: import.meta.env.NG_APP_GOOGLE_MAPS_API_KEY,
     firebaseConfig: {
